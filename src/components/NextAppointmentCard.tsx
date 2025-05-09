@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from 'lucide-react';
 
 export function NextAppointmentCard() {
-  const { chemoSessions } = useData();
+  const { chemoSessions, currentStage } = useData();
   
   // Find the next upcoming session
   const today = new Date();
@@ -37,6 +37,14 @@ export function NextAppointmentCard() {
     return diffDays;
   };
   
+  // Check if tomorrow is stage transition day (May 10, 2025)
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const isStageTransitionTomorrow = 
+    tomorrow.getFullYear() === 2025 && 
+    tomorrow.getMonth() === 4 && // May is month 4 (0-indexed)
+    tomorrow.getDate() === 10;
+  
   return (
     <Card className="card-hover">
       <CardHeader className="pb-2">
@@ -46,6 +54,14 @@ export function NextAppointmentCard() {
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {isStageTransitionTomorrow && (
+          <div className="mb-3 p-2 bg-pink-light rounded-md border border-pink">
+            <p className="font-medium text-sm text-pink-dark">
+              Stage {currentStage + 1} begins tomorrow morning!
+            </p>
+          </div>
+        )}
+        
         {nextSession ? (
           <div>
             <p className="font-medium text-lg">{formatDate(nextSession.date)}</p>
