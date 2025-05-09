@@ -1,4 +1,3 @@
-
 import { ChemoSession, Medication, StageScan, JournalEntry, DateString } from './types';
 
 // Helper to get today's date as a string
@@ -31,7 +30,7 @@ export const mockChemoSessions: ChemoSession[] = [
   },
   {
     id: '2',
-    date: addDays(treatmentStartDate, 14),
+    date: addDays(treatmentStartDate, 1), // May 10, 2025
     stageNumber: 1,
     sessionNumber: 2,
     completed: false,
@@ -41,19 +40,9 @@ export const mockChemoSessions: ChemoSession[] = [
   },
   {
     id: '3',
-    date: addDays(treatmentStartDate, 28),
+    date: '2025-05-16', // May 16, 2025 (Friday)
     stageNumber: 1,
     sessionNumber: 3,
-    completed: false,
-    notes: "",
-    sideEffects: [],
-    feelingRating: 0,
-  },
-  {
-    id: '4',
-    date: addDays(treatmentStartDate, 42),
-    stageNumber: 1,
-    sessionNumber: 4,
     completed: false,
     notes: "",
     sideEffects: [],

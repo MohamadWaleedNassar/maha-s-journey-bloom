@@ -37,13 +37,13 @@ export function NextAppointmentCard() {
     return diffDays;
   };
   
-  // Check if tomorrow is stage transition day (May 10, 2025)
+  // Check if tomorrow is the next session (May 10, 2025)
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
-  const isStageTransitionTomorrow = 
-    tomorrow.getFullYear() === 2025 && 
-    tomorrow.getMonth() === 4 && // May is month 4 (0-indexed)
-    tomorrow.getDate() === 10;
+  const isTomorrowSession = nextSession && 
+    new Date(nextSession.date).getFullYear() === tomorrow.getFullYear() && 
+    new Date(nextSession.date).getMonth() === tomorrow.getMonth() && 
+    new Date(nextSession.date).getDate() === tomorrow.getDate();
   
   return (
     <Card className="card-hover">
@@ -54,10 +54,10 @@ export function NextAppointmentCard() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {isStageTransitionTomorrow && (
+        {isTomorrowSession && (
           <div className="mb-3 p-2 bg-pink-light rounded-md border border-pink">
             <p className="font-medium text-sm text-pink-dark">
-              Stage {currentStage + 1} begins tomorrow morning!
+              Stage {nextSession.stageNumber}, Session {nextSession.sessionNumber} is tomorrow morning!
             </p>
           </div>
         )}
