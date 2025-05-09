@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -24,12 +25,22 @@ export default {
 				ring: 'hsl(var(--ring))',
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
+				lilac: {
+					DEFAULT: '#C8A2C8',
+					light: '#E3D1E3',
+					dark: '#A77EA7'
+				},
+				pink: {
+					DEFAULT: '#FFC0CB',
+					light: '#FFDDE3',
+					dark: '#FF9DAD'
+				},
 				primary: {
-					DEFAULT: 'hsl(var(--primary))',
+					DEFAULT: '#C8A2C8',
 					foreground: 'hsl(var(--primary-foreground))'
 				},
 				secondary: {
-					DEFAULT: 'hsl(var(--secondary))',
+					DEFAULT: '#FFC0CB',
 					foreground: 'hsl(var(--secondary-foreground))'
 				},
 				destructive: {
@@ -84,11 +95,27 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'fade-in': {
+					"0%": {
+						opacity: "0",
+						transform: "translateY(10px)"
+					},
+					"100%": {
+						opacity: "1",
+						transform: "translateY(0)"
+					}
+				},
+				'pulse-gentle': {
+					'0%, 100%': { opacity: '1' },
+					'50%': { opacity: '0.8' },
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'fade-in': 'fade-in 0.5s ease-out',
+				'pulse-gentle': 'pulse-gentle 2s ease-in-out infinite',
 			}
 		}
 	},
