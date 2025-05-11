@@ -1,15 +1,16 @@
+
 import React, { useState } from 'react';
 import { useData } from '@/context/DataContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Check, Calendar, Plus, Star, Upload, Edit, Image } from 'lucide-react';
+import { Check, Calendar, Plus, Star, Upload, Edit, Image, Loader } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 
 const Sessions = () => {
-  const { chemoSessions, updateChemoSession } = useData();
+  const { chemoSessions, updateChemoSession, isLoading } = useData();
   const { toast } = useToast();
   const [selectedSession, setSelectedSession] = useState<null | typeof chemoSessions[0]>(null);
   const [sessionPhoto, setSessionPhoto] = useState<string | null>(null);
@@ -73,7 +74,7 @@ const Sessions = () => {
   };
   
   // Save session changes
-  const saveSessionChanges = () => {
+  const saveSessionChanges = async () => {
     if (!selectedSession) return;
     
     // Check if a photo is uploaded for marking as completed
@@ -95,12 +96,8 @@ const Sessions = () => {
       imageUrl: sessionPhoto
     };
     
-    updateChemoSession(updatedSession);
-    toast({
-      title: "Session updated",
-      description: "Your session details have been saved"
-    });
-    
+    await updateChemoSession(updatedSession);
+    setDialogOpen(false);
     setSelectedSession(null);
   };
   
@@ -109,129 +106,141 @@ const Sessions = () => {
     openSessionDialog(session);
   };
   
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader className="h-8 w-8 animate-spin text-lilac" />
+        <span className="ml-2 text-lg">Loading sessions...</span>
+      </div>
+    );
+  }
+  
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Chemotherapy Sessions</h1>
-        <Button className="bg-lilac hover:bg-lilac-dark">
-          <Plus size={16} className="mr-2" />
-          Add Session
-        </Button>
       </div>
       
-      {Object.entries(sessionsByStage).map(([stage, sessions]) => (
-        <div key={stage} className="mb-8">
-          <div className="flex items-center mb-4">
-            <div className="w-8 h-8 rounded-full bg-lilac text-white flex items-center justify-center mr-2">
-              {stage}
+      {Object.keys(sessionsByStage).length > 0 ? (
+        Object.entries(sessionsByStage).map(([stage, sessions]) => (
+          <div key={stage} className="mb-8">
+            <div className="flex items-center mb-4">
+              <div className="w-8 h-8 rounded-full bg-lilac text-white flex items-center justify-center mr-2">
+                {stage}
+              </div>
+              <h2 className="text-xl font-semibold">Stage {stage}</h2>
             </div>
-            <h2 className="text-xl font-semibold">Stage {stage}</h2>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {sessions
-              .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-              .map((session) => (
-                <Card 
-                  key={session.id} 
-                  className={`card-hover ${session.completed ? 'border-l-4 border-l-green-500' : ''}`}
-                >
-                  <CardHeader className="pb-2">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="text-lg">Session {session.sessionNumber}</CardTitle>
-                        <CardDescription>
-                          <div className="flex items-center">
-                            <Calendar size={14} className="mr-1" />
-                            {formatDate(session.date)}
-                          </div>
-                        </CardDescription>
-                      </div>
-                      {session.completed && (
-                        <div className="bg-green-500 text-white text-xs px-2 py-1 rounded flex items-center">
-                          <Check size={12} className="mr-1" />
-                          Completed
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {sessions
+                .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                .map((session) => (
+                  <Card 
+                    key={session.id} 
+                    className={`card-hover ${session.completed ? 'border-l-4 border-l-green-500' : ''}`}
+                  >
+                    <CardHeader className="pb-2">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <CardTitle className="text-lg">Session {session.sessionNumber}</CardTitle>
+                          <CardDescription>
+                            <div className="flex items-center">
+                              <Calendar size={14} className="mr-1" />
+                              {formatDate(session.date)}
+                            </div>
+                          </CardDescription>
                         </div>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    {session.completed ? (
-                      <div>
-                        {session.notes && (
-                          <p className="text-sm mb-2">{session.notes}</p>
-                        )}
-                        
-                        {session.imageUrl && (
-                          <div className="mb-3 border rounded p-1">
-                            <img 
-                              src={session.imageUrl} 
-                              alt="Session documentation" 
-                              className="w-full h-32 object-cover rounded"
-                            />
+                        {session.completed && (
+                          <div className="bg-green-500 text-white text-xs px-2 py-1 rounded flex items-center">
+                            <Check size={12} className="mr-1" />
+                            Completed
                           </div>
                         )}
-                        
-                        {session.sideEffects.length > 0 && (
-                          <div className="mb-2">
-                            <p className="text-xs text-gray-500 mb-1">Side effects:</p>
-                            <div className="flex flex-wrap gap-1">
-                              {session.sideEffects.map((effect, i) => (
-                                <span key={i} className="bg-pink-light text-pink-dark text-xs px-2 py-1 rounded">
-                                  {effect}
-                                </span>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      {session.completed ? (
+                        <div>
+                          {session.notes && (
+                            <p className="text-sm mb-2">{session.notes}</p>
+                          )}
+                          
+                          {session.imageUrl && (
+                            <div className="mb-3 border rounded p-1">
+                              <img 
+                                src={session.imageUrl} 
+                                alt="Session documentation" 
+                                className="w-full h-32 object-cover rounded"
+                              />
+                            </div>
+                          )}
+                          
+                          {session.sideEffects?.length > 0 && (
+                            <div className="mb-2">
+                              <p className="text-xs text-gray-500 mb-1">Side effects:</p>
+                              <div className="flex flex-wrap gap-1">
+                                {session.sideEffects.map((effect, i) => (
+                                  <span key={i} className="bg-pink-light text-pink-dark text-xs px-2 py-1 rounded">
+                                    {effect}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          <div className="mt-2">
+                            <p className="text-xs text-gray-500 mb-1">How I felt:</p>
+                            <div className="flex">
+                              {[1, 2, 3, 4, 5].map((rating) => (
+                                <Star
+                                  key={rating}
+                                  size={16}
+                                  className={`${rating <= session.feelingRating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`}
+                                />
                               ))}
                             </div>
                           </div>
-                        )}
-                        
-                        <div className="mt-2">
-                          <p className="text-xs text-gray-500 mb-1">How I felt:</p>
-                          <div className="flex">
-                            {[1, 2, 3, 4, 5].map((rating) => (
-                              <Star
-                                key={rating}
-                                size={16}
-                                className={`${rating <= session.feelingRating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`}
-                              />
-                            ))}
-                          </div>
+                          
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="w-full mt-3 border-lilac text-lilac hover:bg-lilac hover:text-white"
+                            onClick={() => openSessionDialog(session)}
+                          >
+                            <Edit size={16} className="mr-2" />
+                            Edit Session
+                          </Button>
                         </div>
-                        
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="w-full mt-3 border-lilac text-lilac hover:bg-lilac hover:text-white"
-                          onClick={() => openSessionDialog(session)}
-                        >
-                          <Edit size={16} className="mr-2" />
-                          Edit Session
-                        </Button>
-                      </div>
-                    ) : (
-                      <div>
-                        <p className="text-sm text-gray-500 mb-3">
-                          {new Date(session.date) <= new Date() ? 
-                            "This session is scheduled for today. Mark it as completed once done." :
-                            "This session is coming up. You can add notes after completion."
-                          }
-                        </p>
-                        <Button 
-                          variant="outline" 
-                          className="w-full border-lilac text-lilac hover:bg-lilac hover:text-white"
-                          onClick={() => markAsCompleted(session)}
-                        >
-                          <Check size={16} className="mr-2" />
-                          Mark as Completed
-                        </Button>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
+                      ) : (
+                        <div>
+                          <p className="text-sm text-gray-500 mb-3">
+                            {new Date(session.date) <= new Date() ? 
+                              "This session is scheduled for today. Mark it as completed once done." :
+                              "This session is coming up. You can add notes after completion."
+                            }
+                          </p>
+                          <Button 
+                            variant="outline" 
+                            className="w-full border-lilac text-lilac hover:bg-lilac hover:text-white"
+                            onClick={() => markAsCompleted(session)}
+                          >
+                            <Check size={16} className="mr-2" />
+                            Mark as Completed
+                          </Button>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+            </div>
           </div>
+        ))
+      ) : (
+        <div className="bg-gray-50 p-6 rounded-lg text-center">
+          <p className="text-gray-500">No chemotherapy sessions available yet.</p>
+          <p className="text-gray-500">Visit the admin panel to add sessions.</p>
         </div>
-      ))}
+      )}
       
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-lg">

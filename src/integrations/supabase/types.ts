@@ -83,6 +83,120 @@ export type Database = {
         }
         Relationships: []
       }
+      chemo_sessions: {
+        Row: {
+          completed: boolean
+          created_at: string
+          date: string
+          feeling_rating: number | null
+          id: string
+          image_url: string | null
+          notes: string | null
+          session_number: number
+          side_effects: Json | null
+          stage_number: number
+          updated_at: string
+        }
+        Insert: {
+          completed?: boolean
+          created_at?: string
+          date: string
+          feeling_rating?: number | null
+          id?: string
+          image_url?: string | null
+          notes?: string | null
+          session_number: number
+          side_effects?: Json | null
+          stage_number: number
+          updated_at?: string
+        }
+        Update: {
+          completed?: boolean
+          created_at?: string
+          date?: string
+          feeling_rating?: number | null
+          id?: string
+          image_url?: string | null
+          notes?: string | null
+          session_number?: number
+          side_effects?: Json | null
+          stage_number?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      journal_entries: {
+        Row: {
+          content: string
+          created_at: string
+          date: string
+          id: string
+          image_url: string | null
+          mood: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          date: string
+          id?: string
+          image_url?: string | null
+          mood?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          date?: string
+          id?: string
+          image_url?: string | null
+          mood?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      medications: {
+        Row: {
+          created_at: string
+          dosage: string
+          end_date: string | null
+          id: string
+          name: string
+          notes: string | null
+          schedule: string
+          start_date: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dosage: string
+          end_date?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          schedule: string
+          start_date: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dosage?: string
+          end_date?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          schedule?: string
+          start_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ogv_approvals: {
         Row: {
           collection_method: string
@@ -188,6 +302,39 @@ export type Database = {
           created_at?: string
           id?: string
           role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      stage_scans: {
+        Row: {
+          created_at: string
+          date: string
+          doctor_notes: string | null
+          id: string
+          image_url: string | null
+          stage_number: number
+          summary: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          doctor_notes?: string | null
+          id?: string
+          image_url?: string | null
+          stage_number: number
+          summary: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          doctor_notes?: string | null
+          id?: string
+          image_url?: string | null
+          stage_number?: number
+          summary?: string
           updated_at?: string
         }
         Relationships: []

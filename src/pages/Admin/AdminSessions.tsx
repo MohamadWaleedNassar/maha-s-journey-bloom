@@ -4,13 +4,13 @@ import { useData } from '@/context/DataContext';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { Calendar, Plus, Edit, Trash, Save, X } from 'lucide-react';
+import { Calendar, Plus, Edit, Trash, Save, X, Loader } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { ChemoSession } from '@/lib/types';
 
 const AdminSessions = () => {
-  const { chemoSessions, setChemoSessions } = useData();
+  const { chemoSessions, addChemoSession, updateChemoSession, deleteChemoSession, isLoading } = useData();
   const [editingSession, setEditingSession] = useState<ChemoSession | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [newSession, setNewSession] = useState<Partial<ChemoSession>>({
@@ -45,40 +45,30 @@ const AdminSessions = () => {
     });
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (editingSession) {
-      const updatedSessions = chemoSessions.map(session => 
-        session.id === editingSession.id ? editingSession : session
-      );
-      setChemoSessions(updatedSessions);
-      toast({
-        title: "Session updated",
-        description: `Session ${editingSession.sessionNumber} has been updated`,
-      });
+      await updateChemoSession(editingSession);
       setEditingSession(null);
     }
   };
 
-  const handleSaveNew = () => {
-    const sessionWithId: ChemoSession = {
-      ...newSession as ChemoSession,
-      id: `new-${Date.now()}`,
-    };
-    setChemoSessions([...chemoSessions, sessionWithId]);
-    toast({
-      title: "Session added",
-      description: `New session has been added`,
-    });
+  const handleSaveNew = async () => {
+    await addChemoSession(newSession as Omit<ChemoSession, 'id'>);
     setIsAddingNew(false);
   };
 
-  const handleDeleteSession = (id: string) => {
-    setChemoSessions(chemoSessions.filter(session => session.id !== id));
-    toast({
-      title: "Session deleted",
-      description: "The session has been deleted",
-    });
+  const handleDeleteSession = async (id: string) => {
+    await deleteChemoSession(id);
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader className="h-8 w-8 animate-spin text-lilac" />
+        <span className="ml-2 text-lg">Loading sessions...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -154,81 +144,89 @@ const AdminSessions = () => {
             </TableRow>
           )}
 
-          {chemoSessions.map(session => (
-            <TableRow key={session.id}>
-              {editingSession?.id === session.id ? (
-                <>
-                  <TableCell>
-                    <Input 
-                      type="date" 
-                      value={editingSession.date} 
-                      onChange={(e) => setEditingSession({...editingSession, date: e.target.value})} 
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Input 
-                      type="number" 
-                      value={editingSession.stageNumber} 
-                      onChange={(e) => setEditingSession({...editingSession, stageNumber: parseInt(e.target.value) as 1|2|3|4})} 
-                      min="1" 
-                      max="4"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Input 
-                      type="number" 
-                      value={editingSession.sessionNumber} 
-                      onChange={(e) => setEditingSession({...editingSession, sessionNumber: parseInt(e.target.value)})} 
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <select 
-                      className="px-3 py-2 border rounded w-full"
-                      value={editingSession.completed ? "true" : "false"}
-                      onChange={(e) => setEditingSession({...editingSession, completed: e.target.value === "true"})}
-                    >
-                      <option value="true">Completed</option>
-                      <option value="false">Upcoming</option>
-                    </select>
-                  </TableCell>
-                  <TableCell>
-                    <Input 
-                      value={editingSession.notes} 
-                      onChange={(e) => setEditingSession({...editingSession, notes: e.target.value})} 
-                    />
-                  </TableCell>
-                  <TableCell className="space-x-2">
-                    <Button onClick={handleSaveEdit} variant="outline" size="sm">
-                      <Save size={16} />
-                    </Button>
-                    <Button onClick={() => setEditingSession(null)} variant="outline" size="sm" className="bg-red-50 text-red-600">
-                      <X size={16} />
-                    </Button>
-                  </TableCell>
-                </>
-              ) : (
-                <>
-                  <TableCell>{new Date(session.date).toLocaleDateString()}</TableCell>
-                  <TableCell>{session.stageNumber}</TableCell>
-                  <TableCell>{session.sessionNumber}</TableCell>
-                  <TableCell>
-                    <span className={`px-2 py-1 rounded ${session.completed ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
-                      {session.completed ? 'Completed' : 'Upcoming'}
-                    </span>
-                  </TableCell>
-                  <TableCell className="max-w-xs truncate">{session.notes}</TableCell>
-                  <TableCell className="space-x-2">
-                    <Button onClick={() => handleEditClick(session)} variant="outline" size="sm">
-                      <Edit size={16} />
-                    </Button>
-                    <Button onClick={() => handleDeleteSession(session.id)} variant="outline" size="sm" className="text-red-600">
-                      <Trash size={16} />
-                    </Button>
-                  </TableCell>
-                </>
-              )}
+          {chemoSessions.length > 0 ? (
+            chemoSessions.map(session => (
+              <TableRow key={session.id}>
+                {editingSession?.id === session.id ? (
+                  <>
+                    <TableCell>
+                      <Input 
+                        type="date" 
+                        value={editingSession.date} 
+                        onChange={(e) => setEditingSession({...editingSession, date: e.target.value})} 
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input 
+                        type="number" 
+                        value={editingSession.stageNumber} 
+                        onChange={(e) => setEditingSession({...editingSession, stageNumber: parseInt(e.target.value) as 1|2|3|4})} 
+                        min="1" 
+                        max="4"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input 
+                        type="number" 
+                        value={editingSession.sessionNumber} 
+                        onChange={(e) => setEditingSession({...editingSession, sessionNumber: parseInt(e.target.value)})} 
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <select 
+                        className="px-3 py-2 border rounded w-full"
+                        value={editingSession.completed ? "true" : "false"}
+                        onChange={(e) => setEditingSession({...editingSession, completed: e.target.value === "true"})}
+                      >
+                        <option value="true">Completed</option>
+                        <option value="false">Upcoming</option>
+                      </select>
+                    </TableCell>
+                    <TableCell>
+                      <Input 
+                        value={editingSession.notes} 
+                        onChange={(e) => setEditingSession({...editingSession, notes: e.target.value})} 
+                      />
+                    </TableCell>
+                    <TableCell className="space-x-2">
+                      <Button onClick={handleSaveEdit} variant="outline" size="sm">
+                        <Save size={16} />
+                      </Button>
+                      <Button onClick={() => setEditingSession(null)} variant="outline" size="sm" className="bg-red-50 text-red-600">
+                        <X size={16} />
+                      </Button>
+                    </TableCell>
+                  </>
+                ) : (
+                  <>
+                    <TableCell>{new Date(session.date).toLocaleDateString()}</TableCell>
+                    <TableCell>{session.stageNumber}</TableCell>
+                    <TableCell>{session.sessionNumber}</TableCell>
+                    <TableCell>
+                      <span className={`px-2 py-1 rounded ${session.completed ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                        {session.completed ? 'Completed' : 'Upcoming'}
+                      </span>
+                    </TableCell>
+                    <TableCell className="max-w-xs truncate">{session.notes}</TableCell>
+                    <TableCell className="space-x-2">
+                      <Button onClick={() => handleEditClick(session)} variant="outline" size="sm">
+                        <Edit size={16} />
+                      </Button>
+                      <Button onClick={() => handleDeleteSession(session.id)} variant="outline" size="sm" className="text-red-600">
+                        <Trash size={16} />
+                      </Button>
+                    </TableCell>
+                  </>
+                )}
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                No sessions available. Click "Add New Session" to create one.
+              </TableCell>
             </TableRow>
-          ))}
+          )}
         </TableBody>
       </Table>
     </div>
