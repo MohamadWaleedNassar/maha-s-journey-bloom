@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useData } from '@/context/DataContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +17,7 @@ const Sessions = () => {
   const [selectedRating, setSelectedRating] = useState(0);
   const [sideEffects, setSideEffects] = useState<string[]>([]);
   const [newSideEffect, setNewSideEffect] = useState('');
+  const [dialogOpen, setDialogOpen] = useState(false);
   
   // Group sessions by stage
   const sessionsByStage = chemoSessions.reduce((acc, session) => {
@@ -44,6 +44,7 @@ const Sessions = () => {
     setSelectedRating(session.feelingRating || 0);
     setSideEffects(session.sideEffects || []);
     setSessionPhoto(session.imageUrl || null);
+    setDialogOpen(true);
   };
   
   // Handle file upload
@@ -197,17 +198,15 @@ const Sessions = () => {
                           </div>
                         </div>
                         
-                        <DialogTrigger asChild>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="w-full mt-3 border-lilac text-lilac hover:bg-lilac hover:text-white"
-                            onClick={() => openSessionDialog(session)}
-                          >
-                            <Edit size={16} className="mr-2" />
-                            Edit Session
-                          </Button>
-                        </DialogTrigger>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="w-full mt-3 border-lilac text-lilac hover:bg-lilac hover:text-white"
+                          onClick={() => openSessionDialog(session)}
+                        >
+                          <Edit size={16} className="mr-2" />
+                          Edit Session
+                        </Button>
                       </div>
                     ) : (
                       <div>
@@ -217,16 +216,14 @@ const Sessions = () => {
                             "This session is coming up. You can add notes after completion."
                           }
                         </p>
-                        <DialogTrigger asChild>
-                          <Button 
-                            variant="outline" 
-                            className="w-full border-lilac text-lilac hover:bg-lilac hover:text-white"
-                            onClick={() => markAsCompleted(session)}
-                          >
-                            <Check size={16} className="mr-2" />
-                            Mark as Completed
-                          </Button>
-                        </DialogTrigger>
+                        <Button 
+                          variant="outline" 
+                          className="w-full border-lilac text-lilac hover:bg-lilac hover:text-white"
+                          onClick={() => markAsCompleted(session)}
+                        >
+                          <Check size={16} className="mr-2" />
+                          Mark as Completed
+                        </Button>
                       </div>
                     )}
                   </CardContent>
@@ -236,7 +233,7 @@ const Sessions = () => {
         </div>
       ))}
       
-      <Dialog open={!!selectedSession} onOpenChange={(open) => !open && setSelectedSession(null)}>
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>
@@ -376,7 +373,7 @@ const Sessions = () => {
           <DialogFooter>
             <Button 
               variant="outline" 
-              onClick={() => setSelectedSession(null)}
+              onClick={() => setDialogOpen(false)}
             >
               Cancel
             </Button>
