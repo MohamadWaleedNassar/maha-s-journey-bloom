@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useData } from '@/context/DataContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Pill } from 'lucide-react';
+import { Plus, Pill, Edit, Trash } from 'lucide-react';
 import MedicationTimeline from '@/components/MedicationTimeline';
 import { 
   Dialog,
@@ -15,10 +15,22 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Medication } from '@/lib/types';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const Medications = () => {
-  const { medications, updateMedication, addMedication } = useData();
+  const { medications, updateMedication, addMedication, deleteMedication } = useData();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [newMedication, setNewMedication] = useState<Partial<Medication>>({
     name: '',
     dosage: '',
@@ -28,6 +40,7 @@ const Medications = () => {
     status: 'ongoing',
     notes: ''
   });
+  const [selectedMedication, setSelectedMedication] = useState<Medication | null>(null);
   const { toast } = useToast();
   
   // Group by status
@@ -72,6 +85,48 @@ const Medications = () => {
       status: 'ongoing',
       notes: ''
     });
+  };
+
+  // Handle editing a medication
+  const handleEditClick = (medication: Medication) => {
+    setSelectedMedication(medication);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditMedication = () => {
+    if (selectedMedication && selectedMedication.name && selectedMedication.dosage && selectedMedication.schedule) {
+      updateMedication(selectedMedication);
+      setIsEditDialogOpen(false);
+      setSelectedMedication(null);
+      toast({
+        title: "Medication updated",
+        description: "Your medication has been updated successfully"
+      });
+    } else {
+      toast({
+        title: "Missing information",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Handle deleting a medication
+  const handleDeleteClick = (medication: Medication) => {
+    setSelectedMedication(medication);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteMedication = () => {
+    if (selectedMedication) {
+      deleteMedication(selectedMedication.id);
+      setIsDeleteDialogOpen(false);
+      setSelectedMedication(null);
+      toast({
+        title: "Medication deleted",
+        description: "The medication has been successfully removed"
+      });
+    }
   };
   
   // Render a single medication card
@@ -137,6 +192,27 @@ const Medications = () => {
               Complete
             </Button>
           )}
+        </div>
+
+        <div className="flex gap-2 mt-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="text-xs flex-1"
+            onClick={() => handleEditClick(medication)}
+          >
+            <Edit size={14} className="mr-1" />
+            Edit
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="text-xs flex-1 text-red-600 hover:bg-red-50"
+            onClick={() => handleDeleteClick(medication)}
+          >
+            <Trash size={14} className="mr-1" />
+            Delete
+          </Button>
         </div>
       </CardContent>
     </Card>
@@ -252,6 +328,103 @@ const Medications = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Medication Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Medication</DialogTitle>
+          </DialogHeader>
+          {selectedMedication && (
+            <div className="space-y-4 py-2">
+              <div>
+                <label htmlFor="edit-name" className="text-sm font-medium mb-1 block">Medication Name</label>
+                <Input 
+                  id="edit-name" 
+                  value={selectedMedication.name} 
+                  onChange={(e) => setSelectedMedication({...selectedMedication, name: e.target.value})}
+                />
+              </div>
+              <div>
+                <label htmlFor="edit-dosage" className="text-sm font-medium mb-1 block">Dosage</label>
+                <Input 
+                  id="edit-dosage" 
+                  value={selectedMedication.dosage} 
+                  onChange={(e) => setSelectedMedication({...selectedMedication, dosage: e.target.value})}
+                />
+              </div>
+              <div>
+                <label htmlFor="edit-schedule" className="text-sm font-medium mb-1 block">Schedule</label>
+                <Input 
+                  id="edit-schedule" 
+                  value={selectedMedication.schedule} 
+                  onChange={(e) => setSelectedMedication({...selectedMedication, schedule: e.target.value})}
+                />
+              </div>
+              <div>
+                <label htmlFor="edit-startDate" className="text-sm font-medium mb-1 block">Start Date</label>
+                <Input 
+                  id="edit-startDate" 
+                  type="date" 
+                  value={selectedMedication.startDate} 
+                  onChange={(e) => setSelectedMedication({...selectedMedication, startDate: e.target.value})}
+                />
+              </div>
+              <div>
+                <label htmlFor="edit-notes" className="text-sm font-medium mb-1 block">Notes (optional)</label>
+                <Input 
+                  id="edit-notes" 
+                  value={selectedMedication.notes} 
+                  onChange={(e) => setSelectedMedication({...selectedMedication, notes: e.target.value})}
+                />
+              </div>
+              <div>
+                <label htmlFor="edit-status" className="text-sm font-medium mb-1 block">Status</label>
+                <select
+                  id="edit-status"
+                  className="w-full border rounded px-3 py-2"
+                  value={selectedMedication.status}
+                  onChange={(e) => setSelectedMedication({
+                    ...selectedMedication, 
+                    status: e.target.value as 'ongoing' | 'completed' | 'paused'
+                  })}
+                >
+                  <option value="ongoing">Ongoing</option>
+                  <option value="paused">Paused</option>
+                  <option value="completed">Completed</option>
+                </select>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleEditMedication} className="bg-lilac hover:bg-lilac-dark">Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action will permanently delete the medication 
+              {selectedMedication ? ` "${selectedMedication.name}"` : ''}.
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteMedication}
+              className="bg-red-600 text-white hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
