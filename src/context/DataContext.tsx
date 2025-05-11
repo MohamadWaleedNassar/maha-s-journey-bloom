@@ -10,24 +10,28 @@ interface DataContextType {
   addChemoSession: (session: Omit<ChemoSession, 'id'>) => void;
   updateChemoSession: (session: ChemoSession) => void;
   deleteChemoSession: (id: string) => void;
+  setChemoSessions: React.Dispatch<React.SetStateAction<ChemoSession[]>>;
   
   // Medications
   medications: Medication[];
   addMedication: (medication: Omit<Medication, 'id'>) => void;
   updateMedication: (medication: Medication) => void;
   deleteMedication: (id: string) => void;
+  setMedications: React.Dispatch<React.SetStateAction<Medication[]>>;
   
   // Scans
   scans: StageScan[];
   addScan: (scan: Omit<StageScan, 'id'>) => void;
   updateScan: (scan: StageScan) => void;
   deleteScan: (id: string) => void;
+  setScans: React.Dispatch<React.SetStateAction<StageScan[]>>;
   
   // Journal entries
   journalEntries: JournalEntry[];
   addJournalEntry: (entry: Omit<JournalEntry, 'id'>) => void;
   updateJournalEntry: (entry: JournalEntry) => void;
   deleteJournalEntry: (id: string) => void;
+  setJournalEntries: React.Dispatch<React.SetStateAction<JournalEntry[]>>;
   
   // Treatment info
   currentStage: number;
@@ -164,21 +168,25 @@ export function DataProvider({ children }: { children: ReactNode }) {
     addChemoSession,
     updateChemoSession,
     deleteChemoSession,
+    setChemoSessions,
     
     medications,
     addMedication,
     updateMedication,
     deleteMedication,
+    setMedications,
     
     scans,
     addScan,
     updateScan,
     deleteScan,
+    setScans,
     
     journalEntries,
     addJournalEntry,
     updateJournalEntry,
     deleteJournalEntry,
+    setJournalEntries,
     
     currentStage,
     totalStages,
