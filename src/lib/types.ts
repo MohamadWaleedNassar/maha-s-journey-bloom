@@ -1,4 +1,3 @@
-
 // Treatment stages
 export type TreatmentStage = 1 | 2 | 3 | 4;
 
@@ -15,6 +14,7 @@ export interface ChemoSession {
   notes: string;
   sideEffects: string[];
   feelingRating: number; // 1-5
+  imageUrl?: string; // New field for session photo
 }
 
 // Medication
