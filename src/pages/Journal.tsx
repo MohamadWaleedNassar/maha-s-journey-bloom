@@ -2,11 +2,11 @@
 import React from 'react';
 import { useData } from '@/context/DataContext';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Plus, FileText } from 'lucide-react';
+import { FileText, Loader } from 'lucide-react';
+import CreateJournalDialog from '@/components/ui/CreateJournalDialog';
 
 const Journal = () => {
-  const { journalEntries } = useData();
+  const { journalEntries, isLoading } = useData();
   
   // Sort entries by date (newest first)
   const sortedEntries = [...journalEntries].sort(
@@ -21,15 +21,21 @@ const Journal = () => {
       day: 'numeric' 
     });
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader className="h-8 w-8 animate-spin text-lilac" />
+        <span className="ml-2 text-lg">Loading journal entries...</span>
+      </div>
+    );
+  }
   
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Journal</h1>
-        <Button className="bg-lilac hover:bg-lilac-dark">
-          <Plus size={16} className="mr-2" />
-          New Entry
-        </Button>
+        <CreateJournalDialog />
       </div>
       
       <div className="grid grid-cols-1 gap-6">
@@ -56,11 +62,13 @@ const Journal = () => {
                   </div>
                 )}
               </CardContent>
-              <CardFooter>
-                <div className="bg-pink-light text-pink-dark text-xs px-3 py-1 rounded-full">
-                  {entry.mood}
-                </div>
-              </CardFooter>
+              {entry.mood && (
+                <CardFooter>
+                  <div className="bg-pink-light text-pink-dark text-xs px-3 py-1 rounded-full">
+                    {entry.mood}
+                  </div>
+                </CardFooter>
+              )}
             </Card>
           ))
         ) : (
@@ -68,10 +76,7 @@ const Journal = () => {
             <FileText className="mx-auto text-gray-400 mb-4" size={48} />
             <h3 className="text-xl font-medium mb-2">Your Journal is Empty</h3>
             <p className="text-gray-500 mb-4">Start documenting your journey by adding your first entry</p>
-            <Button className="bg-lilac hover:bg-lilac-dark">
-              <Plus size={16} className="mr-2" />
-              Create Your First Entry
-            </Button>
+            <CreateJournalDialog />
           </div>
         )}
       </div>

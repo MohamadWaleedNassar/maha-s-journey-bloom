@@ -197,6 +197,54 @@ export type Database = {
         }
         Relationships: []
       }
+      ogt_approvals: {
+        Row: {
+          collection_method: string
+          contract_pdf_url: string
+          created_at: string
+          division_id: string
+          id: string
+          money_collected: number
+          payment_proof_url: string
+          project_id: string
+          status: string
+          tp_id: string
+          tp_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          collection_method: string
+          contract_pdf_url: string
+          created_at?: string
+          division_id: string
+          id?: string
+          money_collected: number
+          payment_proof_url: string
+          project_id: string
+          status?: string
+          tp_id: string
+          tp_name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          collection_method?: string
+          contract_pdf_url?: string
+          created_at?: string
+          division_id?: string
+          id?: string
+          money_collected?: number
+          payment_proof_url?: string
+          project_id?: string
+          status?: string
+          tp_id?: string
+          tp_name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ogv_approvals: {
         Row: {
           collection_method: string

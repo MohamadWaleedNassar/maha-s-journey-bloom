@@ -59,6 +59,51 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const currentStage = 1;
   const treatmentStartDate = new Date('2025-05-09');
 
+  // Helper function to map database response to ChemoSession
+  const mapToChemoSession = (dbSession: any): ChemoSession => ({
+    id: dbSession.id,
+    date: dbSession.date,
+    stageNumber: dbSession.stage_number as 1|2|3|4,
+    sessionNumber: dbSession.session_number,
+    completed: dbSession.completed,
+    notes: dbSession.notes || '',
+    sideEffects: Array.isArray(dbSession.side_effects) ? dbSession.side_effects : [],
+    feelingRating: dbSession.feeling_rating || 0,
+    imageUrl: dbSession.image_url
+  });
+
+  // Helper function to map database response to Medication
+  const mapToMedication = (dbMedication: any): Medication => ({
+    id: dbMedication.id,
+    name: dbMedication.name,
+    dosage: dbMedication.dosage,
+    schedule: dbMedication.schedule,
+    startDate: dbMedication.start_date,
+    endDate: dbMedication.end_date,
+    status: dbMedication.status,
+    notes: dbMedication.notes || ''
+  });
+
+  // Helper function to map database response to StageScan
+  const mapToStageScan = (dbScan: any): StageScan => ({
+    id: dbScan.id,
+    stageNumber: dbScan.stage_number as 1|2|3|4,
+    date: dbScan.date,
+    summary: dbScan.summary,
+    doctorNotes: dbScan.doctor_notes || '',
+    imageUrl: dbScan.image_url
+  });
+
+  // Helper function to map database response to JournalEntry
+  const mapToJournalEntry = (dbEntry: any): JournalEntry => ({
+    id: dbEntry.id,
+    date: dbEntry.date,
+    title: dbEntry.title,
+    content: dbEntry.content,
+    mood: dbEntry.mood || '',
+    imageUrl: dbEntry.image_url
+  });
+
   // Load data from Supabase on initial render
   useEffect(() => {
     const fetchData = async () => {
@@ -104,17 +149,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
           throw entriesError;
         }
         
-        // Process data to ensure proper types
-        const processedSessions = sessionsData.map(session => ({
-          ...session,
-          side_effects: Array.isArray(session.side_effects) ? session.side_effects : []
-        }));
+        // Map data to proper TypeScript interfaces
+        const mappedSessions = sessionsData ? sessionsData.map(mapToChemoSession) : [];
+        const mappedMedications = medsData ? medsData.map(mapToMedication) : [];
+        const mappedScans = scansData ? scansData.map(mapToStageScan) : [];
+        const mappedEntries = entriesData ? entriesData.map(mapToJournalEntry) : [];
         
-        // Set state with fetched data
-        setChemoSessions(sessionsData.length > 0 ? processedSessions : []);
-        setMedications(medsData.length > 0 ? medsData : []);
-        setScans(scansData.length > 0 ? scansData : []);
-        setJournalEntries(entriesData.length > 0 ? entriesData : []);
+        // Set state with mapped data
+        setChemoSessions(mappedSessions);
+        setMedications(mappedMedications);
+        setScans(mappedScans);
+        setJournalEntries(mappedEntries);
       } catch (error) {
         console.error("Error fetching data from Supabase:", error);
         toast({
@@ -155,17 +200,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       
       if (error) throw error;
       
-      // Process side_effects to ensure it's an array
-      const newSession = {
-        ...data[0],
-        id: data[0].id,
-        stageNumber: data[0].stage_number,
-        sessionNumber: data[0].session_number,
-        sideEffects: Array.isArray(data[0].side_effects) ? data[0].side_effects : [],
-        feelingRating: data[0].feeling_rating,
-        imageUrl: data[0].image_url
-      } as ChemoSession;
-      
+      const newSession = mapToChemoSession(data[0]);
       setChemoSessions(prev => [...prev, newSession]);
       
       toast({
@@ -260,13 +295,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       
       if (error) throw error;
       
-      const newMedication = {
-        ...data[0],
-        id: data[0].id,
-        startDate: data[0].start_date,
-        endDate: data[0].end_date
-      } as Medication;
-      
+      const newMedication = mapToMedication(data[0]);
       setMedications(prev => [...prev, newMedication]);
       
       toast({
@@ -359,14 +388,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       
       if (error) throw error;
       
-      const newScan = {
-        ...data[0],
-        id: data[0].id,
-        stageNumber: data[0].stage_number,
-        doctorNotes: data[0].doctor_notes,
-        imageUrl: data[0].image_url
-      } as StageScan;
-      
+      const newScan = mapToStageScan(data[0]);
       setScans(prev => [...prev, newScan]);
       
       toast({
@@ -455,13 +477,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       
       if (error) throw error;
       
-      const newEntry = {
-        ...data[0],
-        id: data[0].id,
-        imageUrl: data[0].image_url
-      } as JournalEntry;
-      
-      setJournalEntries(prev => [...prev, newEntry]);
+      const newEntry = mapToJournalEntry(data[0]);
+      setJournalEntries(prev => [newEntry, ...prev]);
       
       toast({
         title: 'Journal entry added',
