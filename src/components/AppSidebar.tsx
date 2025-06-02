@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import {
   Sidebar,
   SidebarContent,
@@ -11,13 +11,14 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { Calendar, Home, Pill, FileText, Star } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Calendar, Home, Pill, FileText, Star, LogOut } from "lucide-react";
 
 // Menu items
 const menuItems = [
   {
     title: "Dashboard",
-    path: "/",
+    path: "/dashboard",
     icon: Home,
   },
   {
@@ -43,6 +44,12 @@ const menuItems = [
 ];
 
 export function AppSidebar() {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    navigate('/');
+  };
+
   return (
     <Sidebar>
       <div className="flex items-center justify-center p-4 mt-2">
@@ -76,12 +83,22 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <div className="mt-auto p-4 text-center text-sm text-gray-500">
-        <div className="bg-pink-light rounded-lg p-3 mb-3">
-          <p className="text-pink-dark italic">
+      <div className="mt-auto p-4 space-y-3">
+        <div className="bg-pink-light rounded-lg p-3">
+          <p className="text-pink-dark italic text-sm text-center">
             "Remember: every day is a step forward."
           </p>
         </div>
+        
+        <Button 
+          onClick={handleLogout}
+          variant="outline" 
+          size="sm" 
+          className="w-full border-gray-200 text-gray-600 hover:bg-gray-50"
+        >
+          <LogOut size={16} className="mr-2" />
+          Leave Maha's View
+        </Button>
       </div>
     </Sidebar>
   );
