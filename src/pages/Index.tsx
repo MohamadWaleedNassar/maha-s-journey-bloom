@@ -1,13 +1,10 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChevronRight, Lock, Heart, Sparkles } from 'lucide-react';
-
 const Index = () => {
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-pink-50 via-purple-50 to-lilac-50">
+  return <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-pink-50 via-purple-50 to-lilac-50">
       <div className="w-full max-w-4xl px-4">
         <div className="text-center mb-12 animate-fade-in">
           <div className="mb-4">
@@ -40,18 +37,18 @@ const Index = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6 text-center">
-              <p className="text-gray-700 text-lg leading-relaxed">
+              <p className="text-gray-700 leading-relaxed text-base">
                 Your personal sanctuary to track progress, share thoughts, and celebrate victories. 
                 Every small step matters, and every moment of courage counts.
               </p>
               <div className="space-y-2 text-sm text-gray-600">
-                <p>Track your treatment journey</p>
-                <p>Journal your thoughts & feelings</p>
-                <p>Manage medications with ease</p>
-                <p>Celebrate your progress</p>
+                <p className="text-sm text-center">Track your treatment journey</p>
+                <p className="text-sm">Journal your thoughts & feelings</p>
+                <p className="text-sm">Manage medications with ease</p>
+                <p className="text-sm">Celebrate your progress</p>
               </div>
               <Link to="/dashboard">
-                <Button className="w-full bg-gradient-to-r from-pink-400 to-pink-500 hover:from-pink-500 hover:to-pink-600 text-white font-semibold py-3 text-lg rounded-xl shadow-lg transform transition-all duration-200 hover:scale-105">
+                <Button className="w-full bg-gradient-to-r from-pink-400 to-pink-500 hover:from-pink-500 hover:to-pink-600 text-white font-semibold py-3 shadow-lg transform transition-all duration-200 hover:scale-105 rounded-2xl text-lg my-[13px]">
                   <span>Enter Your Space</span>
                   <ChevronRight size={20} />
                 </Button>
@@ -85,8 +82,6 @@ const Index = () => {
           </p>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
