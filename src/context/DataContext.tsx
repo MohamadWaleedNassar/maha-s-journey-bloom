@@ -1,6 +1,5 @@
-
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { ChemoSession, Medication, StageScan, JournalEntry } from '@/lib/types';
+import { ChemoSession, Medication, StageScan, JournalEntry, TreatmentStageConfig } from '@/lib/types';
 import { mockChemoSessions, mockMedications, mockScans, mockJournalEntries } from '@/lib/mockData';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -34,7 +33,14 @@ interface DataContextType {
   deleteJournalEntry: (id: string) => Promise<void>;
   setJournalEntries: React.Dispatch<React.SetStateAction<JournalEntry[]>>;
   
-  // Treatment info
+  // Treatment stage configuration
+  treatmentStages: TreatmentStageConfig[];
+  addTreatmentStage: (stage: Omit<TreatmentStageConfig, 'id'>) => Promise<void>;
+  updateTreatmentStage: (stage: TreatmentStageConfig) => Promise<void>;
+  deleteTreatmentStage: (id: string) => Promise<void>;
+  setTreatmentStages: React.Dispatch<React.SetStateAction<TreatmentStageConfig[]>>;
+  
+  // Treatment info (computed from treatmentStages)
   currentStage: number;
   totalStages: number;
   treatmentStartDate: Date;
@@ -50,14 +56,42 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [medications, setMedications] = useState<Medication[]>([]);
   const [scans, setScans] = useState<StageScan[]>([]);
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
+  const [treatmentStages, setTreatmentStages] = useState<TreatmentStageConfig[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   
   const { toast } = useToast();
   
-  // Treatment info
-  const totalStages = 4;
-  const currentStage = 1;
+  // Treatment info (computed from treatmentStages and chemoSessions)
   const treatmentStartDate = new Date('2025-05-09');
+  const totalStages = treatmentStages.length;
+  
+  // Calculate current stage based on completed sessions
+  const getCurrentStage = () => {
+    if (treatmentStages.length === 0) return 1;
+    
+    for (let i = 0; i < treatmentStages.length; i++) {
+      const stage = treatmentStages[i];
+      const stageSessions = chemoSessions.filter(s => s.stageNumber === stage.stageNumber);
+      const completedSessions = stageSessions.filter(s => s.completed).length;
+      
+      if (completedSessions < stage.sessionsPerStage) {
+        return stage.stageNumber;
+      }
+    }
+    
+    return treatmentStages[treatmentStages.length - 1]?.stageNumber || 1;
+  };
+  
+  const currentStage = getCurrentStage();
+
+  // Helper function to map database response to TreatmentStageConfig
+  const mapToTreatmentStageConfig = (dbStage: any): TreatmentStageConfig => ({
+    id: dbStage.id,
+    stageNumber: dbStage.stage_number,
+    sessionsPerStage: dbStage.sessions_per_stage,
+    stageName: dbStage.stage_name,
+    stageDescription: dbStage.stage_description
+  });
 
   // Helper function to map database response to ChemoSession
   const mapToChemoSession = (dbSession: any): ChemoSession => ({
@@ -109,6 +143,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const fetchData = async () => {
       setIsLoading(true);
       try {
+        // Fetch treatment stages first
+        const { data: stagesData, error: stagesError } = await supabase
+          .from('treatment_stages')
+          .select('*')
+          .order('stage_number', { ascending: true });
+        
+        if (stagesError) {
+          throw stagesError;
+        }
+        
         // Fetch chemo sessions
         const { data: sessionsData, error: sessionsError } = await supabase
           .from('chemo_sessions')
@@ -150,12 +194,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
         }
         
         // Map data to proper TypeScript interfaces
+        const mappedStages = stagesData ? stagesData.map(mapToTreatmentStageConfig) : [];
         const mappedSessions = sessionsData ? sessionsData.map(mapToChemoSession) : [];
         const mappedMedications = medsData ? medsData.map(mapToMedication) : [];
         const mappedScans = scansData ? scansData.map(mapToStageScan) : [];
         const mappedEntries = entriesData ? entriesData.map(mapToJournalEntry) : [];
         
         // Set state with mapped data
+        setTreatmentStages(mappedStages);
         setChemoSessions(mappedSessions);
         setMedications(mappedMedications);
         setScans(mappedScans);
@@ -180,6 +226,93 @@ export function DataProvider({ children }: { children: ReactNode }) {
     
     fetchData();
   }, [toast]);
+
+  // Treatment stages methods
+  const addTreatmentStage = async (stage: Omit<TreatmentStageConfig, 'id'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('treatment_stages')
+        .insert([{ 
+          stage_number: stage.stageNumber,
+          sessions_per_stage: stage.sessionsPerStage,
+          stage_name: stage.stageName,
+          stage_description: stage.stageDescription
+        }])
+        .select();
+      
+      if (error) throw error;
+      
+      const newStage = mapToTreatmentStageConfig(data[0]);
+      setTreatmentStages(prev => [...prev, newStage].sort((a, b) => a.stageNumber - b.stageNumber));
+      
+      toast({
+        title: 'Treatment stage added',
+        description: `Stage ${stage.stageNumber} was successfully added.`
+      });
+    } catch (error: any) {
+      console.error("Error adding treatment stage:", error);
+      toast({
+        title: 'Error',
+        description: `Failed to add treatment stage: ${error.message}`,
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const updateTreatmentStage = async (stage: TreatmentStageConfig) => {
+    try {
+      const { error } = await supabase
+        .from('treatment_stages')
+        .update({ 
+          stage_number: stage.stageNumber,
+          sessions_per_stage: stage.sessionsPerStage,
+          stage_name: stage.stageName,
+          stage_description: stage.stageDescription
+        })
+        .eq('id', stage.id);
+      
+      if (error) throw error;
+      
+      setTreatmentStages(treatmentStages.map(s => s.id === stage.id ? stage : s));
+      
+      toast({
+        title: 'Treatment stage updated',
+        description: `Stage ${stage.stageNumber} was successfully updated.`
+      });
+    } catch (error: any) {
+      console.error("Error updating treatment stage:", error);
+      toast({
+        title: 'Error',
+        description: `Failed to update treatment stage: ${error.message}`,
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const deleteTreatmentStage = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('treatment_stages')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      setTreatmentStages(treatmentStages.filter(s => s.id !== id));
+      
+      toast({
+        title: 'Treatment stage deleted',
+        description: 'The treatment stage was successfully removed.'
+      });
+    } catch (error: any) {
+      console.error("Error deleting treatment stage:", error);
+      toast({
+        title: 'Error',
+        description: `Failed to delete treatment stage: ${error.message}`,
+        variant: 'destructive'
+      });
+    }
+  };
 
   // Chemo sessions methods
   const addChemoSession = async (session: Omit<ChemoSession, 'id'>) => {
@@ -219,7 +352,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const updateChemoSession = async (session: ChemoSession) => {
     try {
-      // Convert session to database format
       const { error } = await supabase
         .from('chemo_sessions')
         .update({ 
@@ -576,6 +708,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
     updateJournalEntry,
     deleteJournalEntry,
     setJournalEntries,
+    
+    treatmentStages,
+    addTreatmentStage,
+    updateTreatmentStage,
+    deleteTreatmentStage,
+    setTreatmentStages,
     
     currentStage,
     totalStages,

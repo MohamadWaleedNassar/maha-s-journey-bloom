@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TreatmentStageIndicator } from '@/components/TreatmentStageIndicator';
 
 const Progress = () => {
-  const { scans, currentStage, totalStages } = useData();
+  const { scans, currentStage, totalStages, treatmentStages } = useData();
   
   // Group scans by stage
   const scansByStage = scans.reduce((acc, scan) => {
@@ -16,6 +16,9 @@ const Progress = () => {
     acc[stage].push(scan);
     return acc;
   }, {} as Record<number, typeof scans>);
+  
+  // Get current stage configuration
+  const currentStageConfig = treatmentStages.find(stage => stage.stageNumber === currentStage);
   
   return (
     <div>
@@ -35,15 +38,22 @@ const Progress = () => {
               Each stage includes multiple chemotherapy sessions followed by a scan to evaluate progress.
             </p>
             
-            <div className="mt-4 bg-pink-light rounded-lg p-4 text-pink-dark">
-              <p className="font-medium">What to expect in Stage {currentStage}:</p>
-              <ul className="list-disc list-inside mt-2 text-sm space-y-1">
-                <li>4 chemotherapy sessions (one every 2 weeks)</li>
-                <li>Regular blood work before each session</li>
-                <li>A body scan after the final session</li>
-                <li>Consultation with your oncologist to review progress</li>
-              </ul>
-            </div>
+            {currentStageConfig && (
+              <div className="mt-4 bg-pink-light rounded-lg p-4 text-pink-dark">
+                <p className="font-medium">
+                  What to expect in {currentStageConfig.stageName || `Stage ${currentStage}`}:
+                </p>
+                <ul className="list-disc list-inside mt-2 text-sm space-y-1">
+                  <li>{currentStageConfig.sessionsPerStage} chemotherapy sessions (one every 2 weeks)</li>
+                  <li>Regular blood work before each session</li>
+                  <li>A body scan after the final session</li>
+                  <li>Consultation with your oncologist to review progress</li>
+                </ul>
+                {currentStageConfig.stageDescription && (
+                  <p className="mt-2 text-sm">{currentStageConfig.stageDescription}</p>
+                )}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -51,42 +61,47 @@ const Progress = () => {
       <h2 className="text-xl font-semibold mb-4">Your Scan Results</h2>
       
       {Object.keys(scansByStage).length > 0 ? (
-        Object.entries(scansByStage).map(([stage, stageScans]) => (
-          <div key={stage} className="mb-6">
-            <h3 className="text-lg font-medium mb-3">Stage {stage} Scans</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {stageScans.map(scan => (
-                <Card key={scan.id} className="card-hover">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base">
-                      Scan from {new Date(scan.date).toLocaleDateString()}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {scan.imageUrl && (
-                      <img 
-                        src={scan.imageUrl} 
-                        alt={`Stage ${scan.stageNumber} scan`}
-                        className="w-full h-40 object-cover rounded-md mb-3"
-                      />
-                    )}
-                    <div className="text-sm">
-                      <p className="font-medium">Summary:</p>
-                      <p className="text-gray-600 mb-2">{scan.summary}</p>
-                      
-                      {scan.doctorNotes && (
-                        <>
-                          <p className="font-medium">Doctor's Notes:</p>
-                          <p className="text-gray-600">{scan.doctorNotes}</p>
-                        </>
+        Object.entries(scansByStage).map(([stage, stageScans]) => {
+          const stageConfig = treatmentStages.find(s => s.stageNumber === parseInt(stage));
+          return (
+            <div key={stage} className="mb-6">
+              <h3 className="text-lg font-medium mb-3">
+                {stageConfig?.stageName || `Stage ${stage}`} Scans
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {stageScans.map(scan => (
+                  <Card key={scan.id} className="card-hover">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base">
+                        Scan from {new Date(scan.date).toLocaleDateString()}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {scan.imageUrl && (
+                        <img 
+                          src={scan.imageUrl} 
+                          alt={`Stage ${scan.stageNumber} scan`}
+                          className="w-full h-40 object-cover rounded-md mb-3"
+                        />
                       )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                      <div className="text-sm">
+                        <p className="font-medium">Summary:</p>
+                        <p className="text-gray-600 mb-2">{scan.summary}</p>
+                        
+                        {scan.doctorNotes && (
+                          <>
+                            <p className="font-medium">Doctor's Notes:</p>
+                            <p className="text-gray-600">{scan.doctorNotes}</p>
+                          </>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
-          </div>
-        ))
+          );
+        })
       ) : (
         <Card>
           <CardContent className="py-6 text-center">

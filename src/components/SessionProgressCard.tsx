@@ -5,7 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 
 export function SessionProgressCard() {
-  const { chemoSessions, currentStage } = useData();
+  const { chemoSessions, currentStage, treatmentStages } = useData();
+  
+  // Find the current stage configuration
+  const currentStageConfig = treatmentStages.find(stage => stage.stageNumber === currentStage);
   
   const currentStageSessions = chemoSessions.filter(
     session => session.stageNumber === currentStage
@@ -15,7 +18,7 @@ export function SessionProgressCard() {
     session => session.completed
   ).length;
   
-  const totalSessions = currentStageSessions.length;
+  const totalSessions = currentStageConfig?.sessionsPerStage || 4;
   const progress = totalSessions > 0 ? (completedSessions / totalSessions) * 100 : 0;
   
   return (
@@ -31,6 +34,11 @@ export function SessionProgressCard() {
           <span className="text-sm font-medium">{Math.round(progress)}%</span>
         </div>
         <Progress value={progress} className="h-2" />
+        {currentStageConfig && (
+          <p className="text-xs text-gray-500 mt-2">
+            {currentStageConfig.stageName || `Stage ${currentStage}`}
+          </p>
+        )}
       </CardContent>
     </Card>
   );

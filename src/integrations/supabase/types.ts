@@ -425,6 +425,36 @@ export type Database = {
           },
         ]
       }
+      treatment_stages: {
+        Row: {
+          created_at: string
+          id: string
+          sessions_per_stage: number
+          stage_description: string | null
+          stage_name: string | null
+          stage_number: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          sessions_per_stage?: number
+          stage_description?: string | null
+          stage_name?: string | null
+          stage_number: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          sessions_per_stage?: number
+          stage_description?: string | null
+          stage_name?: string | null
+          stage_number?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

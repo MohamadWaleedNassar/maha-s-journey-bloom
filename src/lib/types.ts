@@ -1,8 +1,18 @@
+
 // Treatment stages
 export type TreatmentStage = 1 | 2 | 3 | 4;
 
 // Date format for consistency
 export type DateString = string; // ISO format: YYYY-MM-DD
+
+// Treatment stage configuration
+export interface TreatmentStageConfig {
+  id: string;
+  stageNumber: number;
+  sessionsPerStage: number;
+  stageName?: string;
+  stageDescription?: string;
+}
 
 // Chemotherapy session
 export interface ChemoSession {
