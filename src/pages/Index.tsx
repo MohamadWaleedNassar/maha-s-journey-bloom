@@ -25,12 +25,12 @@ const Index = () => {
           </div>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
             This is your safe space, designed with love to support every step of your healing journey. 
-            You are stronger than you know, and you're not walking this path alone. 💕
+            You are stronger than you know, and you're not walking this path alone.
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-          <Card className="border-3 border-pink-200 hover:border-pink-300 hover:shadow-xl transition-all duration-300 transform hover:scale-105 bg-white/80 backdrop-blur-sm">
+        <div className="flex justify-center mb-12">
+          <Card className="border-3 border-pink-200 hover:border-pink-300 hover:shadow-xl transition-all duration-300 transform hover:scale-105 bg-white/80 backdrop-blur-sm max-w-md w-full">
             <CardHeader className="text-center pb-4">
               <div className="mx-auto mb-3 w-16 h-16 bg-gradient-to-br from-pink-400 to-pink-500 rounded-full flex items-center justify-center">
                 <Heart className="text-white w-8 h-8" />
@@ -42,46 +42,17 @@ const Index = () => {
             <CardContent className="space-y-6 text-center">
               <p className="text-gray-700 text-lg leading-relaxed">
                 Your personal sanctuary to track progress, share thoughts, and celebrate victories. 
-                Every small step matters, and every moment of courage counts. ✨
+                Every small step matters, and every moment of courage counts.
               </p>
               <div className="space-y-2 text-sm text-gray-600">
-                <p>📊 Track your treatment journey</p>
-                <p>📝 Journal your thoughts & feelings</p>
-                <p>💊 Manage medications with ease</p>
-                <p>🌟 Celebrate your progress</p>
+                <p>Track your treatment journey</p>
+                <p>Journal your thoughts & feelings</p>
+                <p>Manage medications with ease</p>
+                <p>Celebrate your progress</p>
               </div>
               <Link to="/dashboard">
                 <Button className="w-full bg-gradient-to-r from-pink-400 to-pink-500 hover:from-pink-500 hover:to-pink-600 text-white font-semibold py-3 text-lg rounded-xl shadow-lg transform transition-all duration-200 hover:scale-105">
                   <span>Enter Your Space</span>
-                  <ChevronRight size={20} />
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-          
-          <Card className="border-3 border-purple-200 hover:border-purple-300 hover:shadow-xl transition-all duration-300 transform hover:scale-105 bg-white/80 backdrop-blur-sm">
-            <CardHeader className="text-center pb-4">
-              <div className="mx-auto mb-3 w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center">
-                <Lock className="text-white w-8 h-8" />
-              </div>
-              <CardTitle className="text-2xl font-bold text-purple-600">
-                Care Team Access
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6 text-center">
-              <p className="text-gray-700 text-lg leading-relaxed">
-                Secure access for your care team to customize treatment plans, update schedules, 
-                and ensure everything is perfectly tailored for you. 🩺
-              </p>
-              <div className="space-y-2 text-sm text-gray-600">
-                <p>⚙️ Configure treatment details</p>
-                <p>📅 Manage session schedules</p>
-                <p>💊 Update medication plans</p>
-                <p>📋 Review progress notes</p>
-              </div>
-              <Link to="/admin-login">
-                <Button className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-semibold py-3 text-lg rounded-xl shadow-lg transform transition-all duration-200 hover:scale-105">
-                  <span>Care Team Login</span>
                   <ChevronRight size={20} />
                 </Button>
               </Link>
@@ -92,17 +63,27 @@ const Index = () => {
         <div className="text-center mb-8">
           <div className="inline-block bg-white/60 backdrop-blur-sm rounded-2xl px-8 py-4 shadow-lg border border-pink-100">
             <p className="text-gray-600 text-lg font-medium">
-              "Every sunrise is a new beginning, every breath a gift of strength" 🌅
+              "Every sunrise is a new beginning, every breath a gift of strength"
             </p>
           </div>
         </div>
       </div>
       
-      <footer className="mt-8 text-center space-y-2">
-        <p className="text-gray-500 text-sm">© 2025 Healing Path. All rights reserved.</p>
-        <p className="text-pink-500 text-lg font-medium italic">
-          Created with 💖 by your beloved Wello
-        </p>
+      <footer className="mt-8 text-center space-y-4">
+        <div className="mb-4">
+          <Link to="/admin-login">
+            <Button variant="outline" size="sm" className="border-purple-200 text-purple-600 hover:bg-purple-50">
+              <Lock size={14} className="mr-1" />
+              Care Team Access
+            </Button>
+          </Link>
+        </div>
+        <div className="space-y-2">
+          <p className="text-gray-500 text-sm">© 2025 Healing Path. All rights reserved.</p>
+          <p className="text-pink-500 text-lg font-medium italic">
+            Created with love by your beloved Wello
+          </p>
+        </div>
       </footer>
     </div>
   );
