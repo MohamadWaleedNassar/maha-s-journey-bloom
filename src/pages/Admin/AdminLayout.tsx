@@ -2,7 +2,7 @@
 import React from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { LogOut, Users, Calendar, FileText, Pill, Star } from 'lucide-react';
+import { LogOut, Users, Calendar, FileText, Pill, Star, Camera, Video, Bell } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider } from '@/components/ui/sidebar';
 
@@ -25,7 +25,10 @@ const AdminLayout = () => {
     { name: 'Sessions', icon: Calendar, path: '/admin/sessions' },
     { name: 'Medications', icon: Pill, path: '/admin/medications' },
     { name: 'Journal', icon: FileText, path: '/admin/journal' },
-    { name: 'Progress', icon: Star, path: '/admin/progress' }
+    { name: 'Progress', icon: Star, path: '/admin/progress' },
+    { name: 'Memories', icon: Camera, path: '/admin/memories' },
+    { name: 'Video Call', icon: Video, path: '/admin/video-call' },
+    { name: 'Notifications', icon: Bell, path: '/admin/notifications' }
   ];
 
   return (

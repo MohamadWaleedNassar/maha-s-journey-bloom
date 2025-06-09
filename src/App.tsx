@@ -1,4 +1,3 @@
-
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
@@ -21,6 +20,12 @@ import AdminSessions from "@/pages/Admin/AdminSessions";
 import AdminMedications from "@/pages/Admin/AdminMedications";
 import AdminJournal from "@/pages/Admin/AdminJournal";
 import AdminProgress from "@/pages/Admin/AdminProgress";
+import Memories from "@/pages/Memories";
+import VideoCall from "@/pages/VideoCall";
+import Notifications from "@/pages/Notifications";
+import AdminMemories from "@/pages/Admin/AdminMemories";
+import AdminVideoCall from "@/pages/Admin/AdminVideoCall";
+import AdminNotifications from "@/pages/Admin/AdminNotifications";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +47,9 @@ const App = () => (
               <Route path="/medications" element={<Medications />} />
               <Route path="/journal" element={<Journal />} />
               <Route path="/progress" element={<Progress />} />
+              <Route path="/memories" element={<Memories />} />
+              <Route path="/video-call" element={<VideoCall />} />
+              <Route path="/notifications" element={<Notifications />} />
             </Route>
             
             {/* Admin Authentication */}
@@ -55,6 +63,9 @@ const App = () => (
                 <Route path="/admin/medications" element={<AdminMedications />} />
                 <Route path="/admin/journal" element={<AdminJournal />} />
                 <Route path="/admin/progress" element={<AdminProgress />} />
+                <Route path="/admin/memories" element={<AdminMemories />} />
+                <Route path="/admin/video-call" element={<AdminVideoCall />} />
+                <Route path="/admin/notifications" element={<AdminNotifications />} />
               </Route>
             </Route>
             

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
@@ -12,7 +11,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Calendar, Home, Pill, FileText, Star, LogOut } from "lucide-react";
+import { Calendar, Home, Pill, FileText, Star, LogOut, Camera, Video, Bell } from "lucide-react";
 
 // Menu items
 const menuItems = [
@@ -40,6 +39,21 @@ const menuItems = [
     title: "Progress",
     path: "/progress",
     icon: Star,
+  },
+  {
+    title: "Memories",
+    path: "/memories",
+    icon: Camera,
+  },
+  {
+    title: "Video Call",
+    path: "/video-call",
+    icon: Video,
+  },
+  {
+    title: "Notifications",
+    path: "/notifications",
+    icon: Bell,
   }
 ];
 

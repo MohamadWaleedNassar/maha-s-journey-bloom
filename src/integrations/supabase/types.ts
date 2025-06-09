@@ -197,6 +197,72 @@ export type Database = {
         }
         Relationships: []
       }
+      memories: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          image_url: string
+          notes: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          image_url: string
+          notes?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          image_url?: string
+          notes?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          read_status: boolean
+          sent_by: string
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          read_status?: boolean
+          sent_by?: string
+          title: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          read_status?: boolean
+          sent_by?: string
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ogt_approvals: {
         Row: {
           collection_method: string
@@ -451,6 +517,39 @@ export type Database = {
           stage_description?: string | null
           stage_name?: string | null
           stage_number?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      video_calls: {
+        Row: {
+          created_at: string
+          ended_at: string | null
+          id: string
+          room_id: string
+          started_at: string | null
+          started_by: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          room_id: string
+          started_at?: string | null
+          started_by: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          room_id?: string
+          started_at?: string | null
+          started_by?: string
+          status?: string
           updated_at?: string
         }
         Relationships: []

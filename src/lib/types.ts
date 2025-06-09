@@ -1,4 +1,3 @@
-
 // Treatment stages
 export type TreatmentStage = 1 | 2 | 3 | 4;
 
@@ -59,4 +58,40 @@ export interface JournalEntry {
   content: string;
   mood: string;
   imageUrl?: string;
+}
+
+// Memory for gallery
+export interface Memory {
+  id: string;
+  title: string;
+  description?: string;
+  image_url: string;
+  notes?: string;
+  created_by: 'patient' | 'admin';
+  created_at: string;
+  updated_at: string;
+}
+
+// Notification
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'urgent';
+  read_status: boolean;
+  sent_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Video Call
+export interface VideoCall {
+  id: string;
+  room_id: string;
+  status: 'waiting' | 'active' | 'ended';
+  started_by: 'patient' | 'admin';
+  started_at?: string;
+  ended_at?: string;
+  created_at: string;
+  updated_at: string;
 }
