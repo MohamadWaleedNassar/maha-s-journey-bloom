@@ -1,3 +1,4 @@
+
 // Treatment stages
 export type TreatmentStage = 1 | 2 | 3 | 4;
 
@@ -94,4 +95,5 @@ export interface VideoCall {
   ended_at?: string;
   created_at: string;
   updated_at: string;
+  signaling_data?: any; // For WebRTC signaling (offers, answers, ICE candidates)
 }

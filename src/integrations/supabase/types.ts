@@ -527,6 +527,7 @@ export type Database = {
           ended_at: string | null
           id: string
           room_id: string
+          signaling_data: Json | null
           started_at: string | null
           started_by: string
           status: string
@@ -537,6 +538,7 @@ export type Database = {
           ended_at?: string | null
           id?: string
           room_id: string
+          signaling_data?: Json | null
           started_at?: string | null
           started_by: string
           status?: string
@@ -547,6 +549,7 @@ export type Database = {
           ended_at?: string | null
           id?: string
           room_id?: string
+          signaling_data?: Json | null
           started_at?: string | null
           started_by?: string
           status?: string

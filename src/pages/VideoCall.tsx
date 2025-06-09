@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -60,13 +59,15 @@ const VideoCall = () => {
           console.log('Received offer from admin');
           const answer = await webrtcService.createAnswer(signalingData);
           
-          // Send answer back
-          await supabase
-            .from('video_calls')
-            .update({
-              signaling_data: JSON.stringify(answer)
-            })
-            .eq('id', currentCall.id);
+          // Send answer back using raw SQL update
+          const { error } = await supabase.rpc('update_signaling_data', {
+            call_id: currentCall.id,
+            data: JSON.stringify(answer)
+          });
+          
+          if (error) {
+            console.error('Error sending answer:', error);
+          }
         } else if (signalingData.type === 'answer' && newRecord.started_by !== 'patient') {
           console.log('Received answer from admin');
           await webrtcService.handleAnswer(signalingData);
@@ -111,15 +112,17 @@ const VideoCall = () => {
     service.setOnIceCandidate(async (candidate) => {
       console.log('Sending ICE candidate');
       if (currentCall) {
-        await supabase
-          .from('video_calls')
-          .update({
-            signaling_data: JSON.stringify({
-              type: 'ice-candidate',
-              candidate: candidate
-            })
+        const { error } = await supabase.rpc('update_signaling_data', {
+          call_id: currentCall.id,
+          data: JSON.stringify({
+            type: 'ice-candidate',
+            candidate: candidate
           })
-          .eq('id', currentCall.id);
+        });
+        
+        if (error) {
+          console.error('Error sending ICE candidate:', error);
+        }
       }
     });
 
@@ -165,13 +168,19 @@ const VideoCall = () => {
       // Create and send offer when admin joins
       setTimeout(async () => {
         const offer = await service.createOffer();
-        await supabase
-          .from('video_calls')
-          .update({
-            signaling_data: JSON.stringify(offer),
-            status: 'active'
-          })
-          .eq('id', data.id);
+        const { error: updateError } = await supabase.rpc('update_signaling_data', {
+          call_id: data.id,
+          data: JSON.stringify(offer)
+        });
+        
+        if (updateError) {
+          console.error('Error sending offer:', updateError);
+        } else {
+          await supabase
+            .from('video_calls')
+            .update({ status: 'active' })
+            .eq('id', data.id);
+        }
       }, 2000);
       
     } catch (error: any) {
