@@ -1,12 +1,14 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Video, VideoOff, Mic, MicOff, Phone, PhoneCall, Users } from 'lucide-react';
+import { PhoneCall, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { VideoCall as VideoCallType } from '@/lib/types';
+import { WebRTCService } from '@/lib/webrtc';
+import VideoCallInterface from '@/components/VideoCallInterface';
 
 const VideoCall = () => {
   const [isCallActive, setIsCallActive] = useState(false);
@@ -15,9 +17,9 @@ const VideoCall = () => {
   const [callStatus, setCallStatus] = useState<'waiting' | 'connecting' | 'connected' | 'ended'>('waiting');
   const [activeCalls, setActiveCalls] = useState<VideoCallType[]>([]);
   const [currentCall, setCurrentCall] = useState<VideoCallType | null>(null);
-  const localVideoRef = useRef<HTMLVideoElement>(null);
-  const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  const [webrtcService, setWebrtcService] = useState<WebRTCService | null>(null);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -30,18 +32,32 @@ const VideoCall = () => {
         event: '*',
         schema: 'public',
         table: 'video_calls'
-      }, () => {
+      }, (payload) => {
+        console.log('Video call update:', payload);
         fetchActiveCalls();
+        handleSignalingMessage(payload);
       })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
-      if (localStream) {
-        localStream.getTracks().forEach(track => track.stop());
+      if (webrtcService) {
+        webrtcService.cleanup();
       }
     };
   }, []);
+
+  const handleSignalingMessage = async (payload: any) => {
+    if (!webrtcService || !currentCall) return;
+
+    // Handle WebRTC signaling through database updates
+    const { new: newRecord } = payload;
+    if (newRecord && newRecord.id === currentCall.id) {
+      // This is a simplified signaling approach
+      // In production, you'd want a more robust signaling server
+      console.log('Handling signaling for call:', newRecord);
+    }
+  };
 
   const fetchActiveCalls = async () => {
     try {
@@ -62,30 +78,31 @@ const VideoCall = () => {
     }
   };
 
-  const startLocalVideo = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: isVideoEnabled,
-        audio: isAudioEnabled
-      });
-      
-      setLocalStream(stream);
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = stream;
-      }
-    } catch (error) {
-      toast({
-        title: 'Camera/Microphone Error',
-        description: 'Unable to access camera or microphone',
-        variant: 'destructive'
-      });
-    }
+  const initializeWebRTC = () => {
+    const service = new WebRTCService();
+    
+    service.setOnRemoteStream((stream) => {
+      console.log('Received remote stream');
+      setRemoteStream(stream);
+    });
+
+    service.setOnIceCandidate((candidate) => {
+      console.log('ICE candidate:', candidate);
+      // In a real implementation, you'd send this through your signaling server
+    });
+
+    setWebrtcService(service);
+    return service;
   };
 
   const startCall = async () => {
     setCallStatus('connecting');
     
     try {
+      const service = initializeWebRTC();
+      const stream = await service.getLocalStream(isVideoEnabled, isAudioEnabled);
+      setLocalStream(stream);
+
       const roomId = `call-${Date.now()}`;
       
       const { data, error } = await supabase
@@ -105,7 +122,7 @@ const VideoCall = () => {
         status: data.status as 'waiting' | 'active' | 'ended',
         started_by: data.started_by as 'patient' | 'admin'
       });
-      await startLocalVideo();
+
       setIsCallActive(true);
       setCallStatus('connected');
       
@@ -128,6 +145,10 @@ const VideoCall = () => {
     setCurrentCall(call);
     
     try {
+      const service = initializeWebRTC();
+      const stream = await service.getLocalStream(isVideoEnabled, isAudioEnabled);
+      setLocalStream(stream);
+
       const { error } = await supabase
         .from('video_calls')
         .update({ status: 'active' })
@@ -135,7 +156,6 @@ const VideoCall = () => {
 
       if (error) throw error;
 
-      await startLocalVideo();
       setIsCallActive(true);
       setCallStatus('connected');
       
@@ -168,11 +188,13 @@ const VideoCall = () => {
       }
     }
 
-    if (localStream) {
-      localStream.getTracks().forEach(track => track.stop());
-      setLocalStream(null);
+    if (webrtcService) {
+      webrtcService.cleanup();
+      setWebrtcService(null);
     }
 
+    setLocalStream(null);
+    setRemoteStream(null);
     setIsCallActive(false);
     setCurrentCall(null);
     setCallStatus('waiting');
@@ -184,116 +206,35 @@ const VideoCall = () => {
   };
 
   const toggleVideo = () => {
-    if (localStream) {
-      const videoTrack = localStream.getVideoTracks()[0];
-      if (videoTrack) {
-        videoTrack.enabled = !isVideoEnabled;
-        setIsVideoEnabled(!isVideoEnabled);
-      }
+    const newState = !isVideoEnabled;
+    setIsVideoEnabled(newState);
+    if (webrtcService) {
+      webrtcService.toggleVideo(newState);
     }
   };
 
   const toggleAudio = () => {
-    if (localStream) {
-      const audioTrack = localStream.getAudioTracks()[0];
-      if (audioTrack) {
-        audioTrack.enabled = !isAudioEnabled;
-        setIsAudioEnabled(!isAudioEnabled);
-      }
+    const newState = !isAudioEnabled;
+    setIsAudioEnabled(newState);
+    if (webrtcService) {
+      webrtcService.toggleAudio(newState);
     }
   };
 
   if (isCallActive) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-lilac-50 p-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="mb-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">
-                <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
-                Connected
-              </Badge>
-              <span className="text-gray-600">Call with Care Team</span>
-            </div>
-            
-            <Button
-              onClick={endCall}
-              variant="destructive"
-              className="bg-red-500 hover:bg-red-600"
-            >
-              <Phone size={16} className="mr-2" />
-              End Call
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            {/* Local Video */}
-            <Card className="relative overflow-hidden">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">You (Maha)</CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="aspect-video bg-gray-900 relative">
-                  <video
-                    ref={localVideoRef}
-                    autoPlay
-                    muted
-                    playsInline
-                    className="w-full h-full object-cover"
-                  />
-                  {!isVideoEnabled && (
-                    <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
-                      <VideoOff size={48} className="text-white" />
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Remote Video */}
-            <Card className="relative overflow-hidden">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">Care Team</CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="aspect-video bg-gray-900 relative">
-                  <video
-                    ref={remoteVideoRef}
-                    autoPlay
-                    playsInline
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
-                    <Users size={48} className="text-white" />
-                    <span className="text-white ml-2">Waiting for connection...</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Controls */}
-          <div className="flex justify-center gap-4">
-            <Button
-              onClick={toggleVideo}
-              variant={isVideoEnabled ? "default" : "destructive"}
-              size="lg"
-              className="rounded-full w-12 h-12 p-0"
-            >
-              {isVideoEnabled ? <Video size={20} /> : <VideoOff size={20} />}
-            </Button>
-            
-            <Button
-              onClick={toggleAudio}
-              variant={isAudioEnabled ? "default" : "destructive"}
-              size="lg"
-              className="rounded-full w-12 h-12 p-0"
-            >
-              {isAudioEnabled ? <Mic size={20} /> : <MicOff size={20} />}
-            </Button>
-          </div>
-        </div>
-      </div>
+      <VideoCallInterface
+        localStream={localStream}
+        remoteStream={remoteStream}
+        isVideoEnabled={isVideoEnabled}
+        isAudioEnabled={isAudioEnabled}
+        onToggleVideo={toggleVideo}
+        onToggleAudio={toggleAudio}
+        onEndCall={endCall}
+        localLabel="You (Maha)"
+        remoteLabel="Care Team"
+        callStatus="Connected"
+      />
     );
   }
 
