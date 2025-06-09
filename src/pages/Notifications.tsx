@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -45,7 +44,10 @@ const Notifications = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setNotifications(data || []);
+      setNotifications((data || []).map(item => ({
+        ...item,
+        type: item.type as 'info' | 'success' | 'warning' | 'urgent'
+      })));
     } catch (error: any) {
       toast({
         title: 'Error',

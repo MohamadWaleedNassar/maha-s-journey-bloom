@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -52,7 +51,10 @@ const VideoCall = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setActiveCalls(data || []);
+      setActiveCalls((data || []).map(item => ({
+        ...item,
+        status: item.status as 'waiting' | 'active' | 'ended'
+      })));
     } catch (error: any) {
       console.error('Error fetching calls:', error);
     }
@@ -96,7 +98,10 @@ const VideoCall = () => {
 
       if (error) throw error;
 
-      setCurrentCall(data);
+      setCurrentCall({
+        ...data,
+        status: data.status as 'waiting' | 'active' | 'ended'
+      });
       await startLocalVideo();
       setIsCallActive(true);
       setCallStatus('connected');

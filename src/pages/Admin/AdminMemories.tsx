@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,7 +35,10 @@ const AdminMemories = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setMemories(data || []);
+      setMemories((data || []).map(item => ({
+        ...item,
+        created_by: item.created_by as 'patient' | 'admin'
+      })));
     } catch (error: any) {
       toast({
         title: 'Error',
