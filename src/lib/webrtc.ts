@@ -123,14 +123,6 @@ export class WebRTCService {
     }
   }
 
-  getLocalStream(): MediaStream | null {
-    return this.localStream;
-  }
-
-  getRemoteStream(): MediaStream | null {
-    return this.remoteStream;
-  }
-
   cleanup() {
     if (this.localStream) {
       this.localStream.getTracks().forEach(track => track.stop());

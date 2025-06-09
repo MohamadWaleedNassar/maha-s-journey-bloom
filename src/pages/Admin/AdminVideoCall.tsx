@@ -45,17 +45,38 @@ const AdminVideoCall = () => {
         webrtcService.cleanup();
       }
     };
-  }, []);
+  }, [webrtcService, currentCall]);
 
   const handleSignalingMessage = async (payload: any) => {
     if (!webrtcService || !currentCall) return;
 
-    // Handle WebRTC signaling through database updates
     const { new: newRecord } = payload;
-    if (newRecord && newRecord.id === currentCall.id) {
-      // This is a simplified signaling approach
-      // In production, you'd want a more robust signaling server
-      console.log('Handling signaling for call:', newRecord);
+    
+    if (newRecord && newRecord.room_id === currentCall.room_id && newRecord.signaling_data) {
+      try {
+        const signalingData = JSON.parse(newRecord.signaling_data);
+        
+        if (signalingData.type === 'offer' && newRecord.started_by !== 'admin') {
+          console.log('Received offer from patient');
+          const answer = await webrtcService.createAnswer(signalingData);
+          
+          // Send answer back
+          await supabase
+            .from('video_calls')
+            .update({
+              signaling_data: JSON.stringify(answer)
+            })
+            .eq('id', currentCall.id);
+        } else if (signalingData.type === 'answer' && newRecord.started_by !== 'admin') {
+          console.log('Received answer from patient');
+          await webrtcService.handleAnswer(signalingData);
+        } else if (signalingData.type === 'ice-candidate') {
+          console.log('Received ICE candidate');
+          await webrtcService.addIceCandidate(signalingData.candidate);
+        }
+      } catch (error) {
+        console.error('Error handling signaling:', error);
+      }
     }
   };
 
@@ -84,11 +105,22 @@ const AdminVideoCall = () => {
     service.setOnRemoteStream((stream) => {
       console.log('Received remote stream');
       setRemoteStream(stream);
+      setCallStatus('connected');
     });
 
-    service.setOnIceCandidate((candidate) => {
-      console.log('ICE candidate:', candidate);
-      // In a real implementation, you'd send this through your signaling server
+    service.setOnIceCandidate(async (candidate) => {
+      console.log('Sending ICE candidate');
+      if (currentCall) {
+        await supabase
+          .from('video_calls')
+          .update({
+            signaling_data: JSON.stringify({
+              type: 'ice-candidate',
+              candidate: candidate
+            })
+          })
+          .eq('id', currentCall.id);
+      }
     });
 
     setWebrtcService(service);
@@ -124,12 +156,24 @@ const AdminVideoCall = () => {
       });
 
       setIsCallActive(true);
-      setCallStatus('connected');
       
       toast({
         title: 'Call Started',
         description: 'Waiting for Maha to join...'
       });
+
+      // Create and send offer
+      setTimeout(async () => {
+        const offer = await service.createOffer();
+        await supabase
+          .from('video_calls')
+          .update({
+            signaling_data: JSON.stringify(offer),
+            status: 'active'
+          })
+          .eq('id', data.id);
+      }, 2000);
+      
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -157,7 +201,6 @@ const AdminVideoCall = () => {
       if (error) throw error;
 
       setIsCallActive(true);
-      setCallStatus('connected');
       
       toast({
         title: 'Joined Call',
@@ -233,7 +276,7 @@ const AdminVideoCall = () => {
         onEndCall={endCall}
         localLabel="You (Care Team)"
         remoteLabel="Maha"
-        callStatus="Connected"
+        callStatus={callStatus === 'connected' ? "Connected" : "Connecting..."}
       />
     );
   }
@@ -314,7 +357,7 @@ const AdminVideoCall = () => {
         </Card>
       </div>
 
-      {/* Call History */}
+      {/* Call Features */}
       <Card className="mt-6 bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
         <CardContent className="pt-6">
           <h3 className="font-semibold text-purple-800 mb-2">Video Call Features</h3>
