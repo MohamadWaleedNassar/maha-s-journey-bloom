@@ -53,7 +53,10 @@ const VideoCall = () => {
     
     if (newRecord && newRecord.room_id === currentCall.room_id && newRecord.signaling_data) {
       try {
-        const signalingData = JSON.parse(newRecord.signaling_data);
+        const signalingDataString = typeof newRecord.signaling_data === 'string' 
+          ? newRecord.signaling_data 
+          : JSON.stringify(newRecord.signaling_data);
+        const signalingData = JSON.parse(signalingDataString);
         
         if (signalingData.type === 'offer' && newRecord.started_by !== 'patient') {
           console.log('Received offer from admin');
@@ -62,7 +65,7 @@ const VideoCall = () => {
           // Send answer back using raw SQL update
           const { error } = await supabase.rpc('update_signaling_data', {
             call_id: currentCall.id,
-            data: JSON.stringify(answer)
+            data: answer
           });
           
           if (error) {
@@ -114,10 +117,10 @@ const VideoCall = () => {
       if (currentCall) {
         const { error } = await supabase.rpc('update_signaling_data', {
           call_id: currentCall.id,
-          data: JSON.stringify({
+          data: {
             type: 'ice-candidate',
             candidate: candidate
-          })
+          }
         });
         
         if (error) {
@@ -170,7 +173,7 @@ const VideoCall = () => {
         const offer = await service.createOffer();
         const { error: updateError } = await supabase.rpc('update_signaling_data', {
           call_id: data.id,
-          data: JSON.stringify(offer)
+          data: offer
         });
         
         if (updateError) {
