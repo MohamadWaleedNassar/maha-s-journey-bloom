@@ -1,9 +1,10 @@
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Video, VideoOff, Mic, MicOff, Phone, Users } from 'lucide-react';
+import { Video, VideoOff, Mic, MicOff, Phone, Users, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface VideoCallInterfaceProps {
   localStream: MediaStream | null;
@@ -16,6 +17,7 @@ interface VideoCallInterfaceProps {
   localLabel: string;
   remoteLabel: string;
   callStatus: string;
+  error?: string;
 }
 
 const VideoCallInterface: React.FC<VideoCallInterfaceProps> = ({
@@ -29,25 +31,89 @@ const VideoCallInterface: React.FC<VideoCallInterfaceProps> = ({
   localLabel,
   remoteLabel,
   callStatus,
+  error,
 }) => {
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  const [localVideoError, setLocalVideoError] = useState<string | null>(null);
+  const [remoteVideoError, setRemoteVideoError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (localVideoRef.current && localStream) {
-      localVideoRef.current.srcObject = localStream;
-    }
+    const setupLocalVideo = async () => {
+      if (localVideoRef.current && localStream) {
+        try {
+          console.log('Setting up local video with stream:', localStream);
+          localVideoRef.current.srcObject = localStream;
+          
+          // Ensure video plays
+          localVideoRef.current.onloadedmetadata = () => {
+            console.log('Local video metadata loaded');
+            localVideoRef.current?.play().catch(e => {
+              console.error('Error playing local video:', e);
+              setLocalVideoError('Failed to play video');
+            });
+          };
+
+          // Handle video errors
+          localVideoRef.current.onerror = (e) => {
+            console.error('Local video error:', e);
+            setLocalVideoError('Video playback error');
+          };
+
+          setLocalVideoError(null);
+        } catch (error) {
+          console.error('Error setting up local video:', error);
+          setLocalVideoError('Failed to setup video');
+        }
+      }
+    };
+
+    setupLocalVideo();
   }, [localStream]);
 
   useEffect(() => {
-    if (remoteVideoRef.current && remoteStream) {
-      remoteVideoRef.current.srcObject = remoteStream;
-    }
+    const setupRemoteVideo = async () => {
+      if (remoteVideoRef.current && remoteStream) {
+        try {
+          console.log('Setting up remote video with stream:', remoteStream);
+          remoteVideoRef.current.srcObject = remoteStream;
+          
+          // Ensure video plays
+          remoteVideoRef.current.onloadedmetadata = () => {
+            console.log('Remote video metadata loaded');
+            remoteVideoRef.current?.play().catch(e => {
+              console.error('Error playing remote video:', e);
+              setRemoteVideoError('Failed to play video');
+            });
+          };
+
+          // Handle video errors
+          remoteVideoRef.current.onerror = (e) => {
+            console.error('Remote video error:', e);
+            setRemoteVideoError('Video playback error');
+          };
+
+          setRemoteVideoError(null);
+        } catch (error) {
+          console.error('Error setting up remote video:', error);
+          setRemoteVideoError('Failed to setup video');
+        }
+      }
+    };
+
+    setupRemoteVideo();
   }, [remoteStream]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-lilac-50 p-4">
       <div className="max-w-6xl mx-auto">
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">
@@ -82,9 +148,18 @@ const VideoCallInterface: React.FC<VideoCallInterfaceProps> = ({
                   playsInline
                   className="w-full h-full object-cover"
                 />
-                {!isVideoEnabled && (
-                  <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
-                    <VideoOff size={48} className="text-white" />
+                {(!isVideoEnabled || localVideoError) && (
+                  <div className="absolute inset-0 bg-gray-800 flex flex-col items-center justify-center">
+                    <VideoOff size={48} className="text-white mb-2" />
+                    <span className="text-white text-sm">
+                      {localVideoError || 'Camera disabled'}
+                    </span>
+                  </div>
+                )}
+                {!localStream && (
+                  <div className="absolute inset-0 bg-gray-800 flex flex-col items-center justify-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mb-2"></div>
+                    <span className="text-white text-sm">Accessing camera...</span>
                   </div>
                 )}
               </div>
@@ -105,9 +180,15 @@ const VideoCallInterface: React.FC<VideoCallInterfaceProps> = ({
                   className="w-full h-full object-cover"
                 />
                 {!remoteStream && (
-                  <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
-                    <Users size={48} className="text-white" />
-                    <span className="text-white ml-2">Waiting for connection...</span>
+                  <div className="absolute inset-0 bg-gray-800 flex flex-col items-center justify-center">
+                    <Users size={48} className="text-white mb-2" />
+                    <span className="text-white text-sm">Waiting for connection...</span>
+                  </div>
+                )}
+                {remoteVideoError && (
+                  <div className="absolute inset-0 bg-gray-800 flex flex-col items-center justify-center">
+                    <VideoOff size={48} className="text-white mb-2" />
+                    <span className="text-white text-sm">{remoteVideoError}</span>
                   </div>
                 )}
               </div>

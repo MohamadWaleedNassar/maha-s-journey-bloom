@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { PhoneCall, Users, Clock } from 'lucide-react';
+import { PhoneCall, Users, Clock, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { VideoCall as VideoCallType } from '@/lib/types';
 import { WebRTCService } from '@/lib/webrtc';
 import VideoCallInterface from '@/components/VideoCallInterface';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const AdminVideoCall = () => {
   const [isCallActive, setIsCallActive] = useState(false);
@@ -19,6 +20,8 @@ const AdminVideoCall = () => {
   const [webrtcService, setWebrtcService] = useState<WebRTCService | null>(null);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isStartingCall, setIsStartingCall] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -80,6 +83,7 @@ const AdminVideoCall = () => {
         }
       } catch (error) {
         console.error('Error handling signaling:', error);
+        setError('Error in call signaling. Please try again.');
       }
     }
   };
@@ -100,6 +104,7 @@ const AdminVideoCall = () => {
       })));
     } catch (error: any) {
       console.error('Error fetching calls:', error);
+      setError('Failed to load calls. Please refresh the page.');
     }
   };
 
@@ -110,6 +115,7 @@ const AdminVideoCall = () => {
       console.log('Received remote stream');
       setRemoteStream(stream);
       setCallStatus('connected');
+      setError(null);
     });
 
     service.setOnIceCandidate(async (candidate) => {
@@ -129,15 +135,29 @@ const AdminVideoCall = () => {
       }
     });
 
+    service.setOnError((errorMessage) => {
+      console.error('WebRTC error:', errorMessage);
+      setError(errorMessage);
+      setIsStartingCall(false);
+      setCallStatus('waiting');
+    });
+
     setWebrtcService(service);
     return service;
   };
 
   const startCall = async () => {
     setCallStatus('connecting');
+    setIsStartingCall(true);
+    setError(null);
     
     try {
       const service = initializeWebRTC();
+      
+      // Check permissions first
+      const permissions = await service.checkMediaPermissions();
+      console.log('Media permissions:', permissions);
+      
       const stream = await service.getLocalStream(isVideoEnabled, isAudioEnabled);
       setLocalStream(stream);
 
@@ -162,6 +182,7 @@ const AdminVideoCall = () => {
       });
 
       setIsCallActive(true);
+      setIsStartingCall(false);
       
       toast({
         title: 'Call Started',
@@ -170,35 +191,46 @@ const AdminVideoCall = () => {
 
       // Create and send offer
       setTimeout(async () => {
-        const offer = await service.createOffer();
-        const { error: updateError } = await (supabase as any).rpc('update_signaling_data', {
-          call_id: data.id,
-          data: offer
-        });
-        
-        if (updateError) {
-          console.error('Error sending offer:', updateError);
-        } else {
-          await supabase
-            .from('video_calls')
-            .update({ status: 'active' })
-            .eq('id', data.id);
+        try {
+          const offer = await service.createOffer();
+          const { error: updateError } = await (supabase as any).rpc('update_signaling_data', {
+            call_id: data.id,
+            data: offer
+          });
+          
+          if (updateError) {
+            console.error('Error sending offer:', updateError);
+            setError('Failed to establish connection. Please try again.');
+          } else {
+            await supabase
+              .from('video_calls')
+              .update({ status: 'active' })
+              .eq('id', data.id);
+          }
+        } catch (error) {
+          console.error('Error creating offer:', error);
+          setError('Failed to create call offer. Please try again.');
         }
       }, 2000);
       
     } catch (error: any) {
+      console.error('Error starting call:', error);
+      setError(error.message || 'Failed to start call. Please check your camera and microphone permissions.');
+      setCallStatus('waiting');
+      setIsStartingCall(false);
+      
       toast({
         title: 'Error',
-        description: `Failed to start call: ${error.message}`,
+        description: error.message || 'Failed to start call',
         variant: 'destructive'
       });
-      setCallStatus('waiting');
     }
   };
 
   const joinCall = async (call: VideoCallType) => {
     setCallStatus('connecting');
     setCurrentCall(call);
+    setError(null);
     
     try {
       const service = initializeWebRTC();
@@ -219,6 +251,7 @@ const AdminVideoCall = () => {
         description: 'Connected with Maha successfully!'
       });
     } catch (error: any) {
+      setError(error.message || 'Failed to join call');
       toast({
         title: 'Error',
         description: `Failed to join call: ${error.message}`,
@@ -253,6 +286,7 @@ const AdminVideoCall = () => {
     setIsCallActive(false);
     setCurrentCall(null);
     setCallStatus('waiting');
+    setError(null);
     
     toast({
       title: 'Call Ended',
@@ -289,6 +323,7 @@ const AdminVideoCall = () => {
         localLabel="You (Care Team)"
         remoteLabel="Maha"
         callStatus={callStatus === 'connected' ? "Connected" : "Connecting..."}
+        error={error || undefined}
       />
     );
   }
@@ -299,6 +334,13 @@ const AdminVideoCall = () => {
         <h1 className="text-3xl font-bold text-purple-800 mb-2">Video Call Management</h1>
         <p className="text-gray-600">Connect with Maha through secure video calls</p>
       </div>
+
+      {error && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Start New Call */}
@@ -315,10 +357,10 @@ const AdminVideoCall = () => {
             </p>
             <Button 
               onClick={startCall}
-              disabled={callStatus === 'connecting'}
+              disabled={isStartingCall || callStatus === 'connecting'}
               className="w-full bg-purple-600 hover:bg-purple-700 text-white"
             >
-              {callStatus === 'connecting' ? 'Starting Call...' : 'Start Video Call with Maha'}
+              {isStartingCall ? 'Starting Call...' : 'Start Video Call with Maha'}
             </Button>
           </CardContent>
         </Card>
@@ -379,6 +421,7 @@ const AdminVideoCall = () => {
             <li>• Real-time connection status updates</li>
             <li>• Easy camera and microphone controls</li>
             <li>• Notifications when Maha starts a call</li>
+            <li>• Allow camera and microphone access when prompted</li>
           </ul>
         </CardContent>
       </Card>
