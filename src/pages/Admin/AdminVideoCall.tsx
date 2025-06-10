@@ -65,7 +65,7 @@ const AdminVideoCall = () => {
           // Send answer back using raw SQL update
           const { error } = await supabase.rpc('update_signaling_data', {
             call_id: currentCall.id,
-            data: answer
+            data: answer as any
           });
           
           if (error) {
@@ -120,7 +120,7 @@ const AdminVideoCall = () => {
           data: {
             type: 'ice-candidate',
             candidate: candidate
-          }
+          } as any
         });
         
         if (error) {
@@ -173,7 +173,7 @@ const AdminVideoCall = () => {
         const offer = await service.createOffer();
         const { error: updateError } = await supabase.rpc('update_signaling_data', {
           call_id: data.id,
-          data: offer
+          data: offer as any
         });
         
         if (updateError) {
