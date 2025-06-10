@@ -43,11 +43,18 @@ const VideoCall = () => {
 
     return () => {
       supabase.removeChannel(channel);
-      if (webrtcService) {
+    };
+  }, []);
+
+  // Separate useEffect for WebRTC cleanup - only cleanup when component unmounts or call ends
+  useEffect(() => {
+    return () => {
+      if (webrtcService && !isCallActive) {
+        console.log('Component unmounting - cleaning up WebRTC');
         webrtcService.cleanup();
       }
     };
-  }, [webrtcService, currentCall]);
+  }, [webrtcService, isCallActive]);
 
   const handleSignalingMessage = async (payload: any) => {
     if (!webrtcService || !currentCall) return;
@@ -109,6 +116,7 @@ const VideoCall = () => {
   };
 
   const initializeWebRTC = () => {
+    console.log('Initializing WebRTC service');
     const service = new WebRTCService();
     
     service.setOnRemoteStream((stream) => {
@@ -143,6 +151,7 @@ const VideoCall = () => {
     });
 
     setWebrtcService(service);
+    console.log('WebRTC service initialized and stored');
     return service;
   };
 
@@ -152,17 +161,21 @@ const VideoCall = () => {
     setError(null);
     
     try {
+      console.log('Starting call - initializing WebRTC');
       const service = initializeWebRTC();
       
       // Check permissions first
       const permissions = await service.checkMediaPermissions();
       console.log('Media permissions:', permissions);
       
+      console.log('Getting local stream');
       const stream = await service.getLocalStream(isVideoEnabled, isAudioEnabled);
       setLocalStream(stream);
+      console.log('Local stream set successfully');
 
       const roomId = `call-${Date.now()}`;
       
+      console.log('Creating call record in database');
       const { data, error } = await supabase
         .from('video_calls')
         .insert({
@@ -175,24 +188,34 @@ const VideoCall = () => {
 
       if (error) throw error;
 
-      setCurrentCall({
+      const newCall = {
         ...data,
         status: data.status as 'waiting' | 'active' | 'ended',
         started_by: data.started_by as 'patient' | 'admin'
-      });
+      };
 
+      setCurrentCall(newCall);
       setIsCallActive(true);
       setIsStartingCall(false);
+      
+      console.log('Call created successfully, preparing to send offer');
       
       toast({
         title: 'Call Started',
         description: 'Waiting for admin to join...'
       });
 
-      // Create and send offer when admin joins
+      // Create and send offer after a short delay to ensure everything is set up
       setTimeout(async () => {
         try {
+          console.log('Creating offer...');
+          if (!service) {
+            throw new Error('WebRTC service not available');
+          }
+          
           const offer = await service.createOffer();
+          console.log('Offer created successfully:', offer);
+          
           const { error: updateError } = await (supabase as any).rpc('update_signaling_data', {
             call_id: data.id,
             data: offer
@@ -202,6 +225,7 @@ const VideoCall = () => {
             console.error('Error sending offer:', updateError);
             setError('Failed to establish connection. Please try again.');
           } else {
+            console.log('Offer sent successfully');
             await supabase
               .from('video_calls')
               .update({ status: 'active' })
@@ -211,7 +235,7 @@ const VideoCall = () => {
           console.error('Error creating offer:', error);
           setError('Failed to create call offer. Please try again.');
         }
-      }, 2000);
+      }, 1000);
       
     } catch (error: any) {
       console.error('Error starting call:', error);
@@ -262,6 +286,8 @@ const VideoCall = () => {
   };
 
   const endCall = async () => {
+    console.log('Ending call');
+    
     if (currentCall) {
       try {
         await supabase
@@ -277,6 +303,7 @@ const VideoCall = () => {
     }
 
     if (webrtcService) {
+      console.log('Cleaning up WebRTC service');
       webrtcService.cleanup();
       setWebrtcService(null);
     }
