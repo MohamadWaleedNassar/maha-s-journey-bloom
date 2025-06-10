@@ -43,18 +43,13 @@ const AdminVideoCall = () => {
 
     return () => {
       supabase.removeChannel(channel);
-    };
-  }, []);
-
-  // Separate useEffect for WebRTC cleanup - only cleanup when component unmounts or call ends
-  useEffect(() => {
-    return () => {
+      // Only cleanup if we're not in an active call
       if (webrtcService && !isCallActive) {
         console.log('Component unmounting - cleaning up WebRTC');
         webrtcService.cleanup();
       }
     };
-  }, [webrtcService, isCallActive]);
+  }, []);
 
   const handleSignalingMessage = async (payload: any) => {
     if (!webrtcService || !currentCall) return;
@@ -164,10 +159,6 @@ const AdminVideoCall = () => {
       console.log('Starting call - initializing WebRTC');
       const service = initializeWebRTC();
       
-      // Check permissions first
-      const permissions = await service.checkMediaPermissions();
-      console.log('Media permissions:', permissions);
-      
       console.log('Getting local stream');
       const stream = await service.getLocalStream(isVideoEnabled, isAudioEnabled);
       setLocalStream(stream);
@@ -205,14 +196,10 @@ const AdminVideoCall = () => {
         description: 'Waiting for Maha to join...'
       });
 
-      // Create and send offer after a short delay to ensure everything is set up
+      // Wait a bit longer for everything to be properly set up
       setTimeout(async () => {
         try {
           console.log('Creating offer...');
-          if (!service) {
-            throw new Error('WebRTC service not available');
-          }
-          
           const offer = await service.createOffer();
           console.log('Offer created successfully:', offer);
           
@@ -235,7 +222,7 @@ const AdminVideoCall = () => {
           console.error('Error creating offer:', error);
           setError('Failed to create call offer. Please try again.');
         }
-      }, 1000);
+      }, 2000);
       
     } catch (error: any) {
       console.error('Error starting call:', error);
