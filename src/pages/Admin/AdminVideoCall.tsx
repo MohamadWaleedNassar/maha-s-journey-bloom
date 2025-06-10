@@ -63,9 +63,9 @@ const AdminVideoCall = () => {
           const answer = await webrtcService.createAnswer(signalingData);
           
           // Send answer back using raw SQL update
-          const { error } = await supabase.rpc('update_signaling_data', {
+          const { error } = await (supabase as any).rpc('update_signaling_data', {
             call_id: currentCall.id,
-            data: answer as any
+            data: answer
           });
           
           if (error) {
@@ -115,12 +115,12 @@ const AdminVideoCall = () => {
     service.setOnIceCandidate(async (candidate) => {
       console.log('Sending ICE candidate');
       if (currentCall) {
-        const { error } = await supabase.rpc('update_signaling_data', {
+        const { error } = await (supabase as any).rpc('update_signaling_data', {
           call_id: currentCall.id,
           data: {
             type: 'ice-candidate',
             candidate: candidate
-          } as any
+          }
         });
         
         if (error) {
@@ -171,9 +171,9 @@ const AdminVideoCall = () => {
       // Create and send offer
       setTimeout(async () => {
         const offer = await service.createOffer();
-        const { error: updateError } = await supabase.rpc('update_signaling_data', {
+        const { error: updateError } = await (supabase as any).rpc('update_signaling_data', {
           call_id: data.id,
-          data: offer as any
+          data: offer
         });
         
         if (updateError) {
